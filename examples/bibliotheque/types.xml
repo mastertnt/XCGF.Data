@@ -33,4 +33,9 @@
     <Alternative enumerator="Search" name="SearchRange" dataType="RangeMeters"/>
     <Alternative enumerator="Track" name="TrackId" dataType="HLAinteger32BE"/>
   </VariantRecordData>
+
+  <!-- Références à des instances (extension XCGF). -->
+  <ReferenceData name="UnitReference" target="Unit"/>
+  <ReferenceData name="EntityReference" target="Entity"/>
+  <ReferenceData name="EquipmentReference" target="Equipment"/>
 </DataTypes>

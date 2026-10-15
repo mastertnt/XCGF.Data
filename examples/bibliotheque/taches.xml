@@ -8,7 +8,7 @@
   <TaskDefinition name="MoveTo">
     <Description>Se déplacer jusqu'à une destination.</Description>
     <Who>
-      <Parameter name="Escort" dataType="HLAASCIIstring"/>
+      <Parameter name="Escort" dataType="EntityReference"/>
     </Who>
     <What>
       <Parameter name="Speed" dataType="SpeedMetersPerSecond">
@@ -71,6 +71,10 @@
   </TaskDefinition>
 
   <TaskDefinition name="Reconnaissance">
+    <Who>
+      <Parameter name="ReportTo" dataType="UnitReference"/>
+      <Parameter name="Sensor" dataType="EquipmentReference"/>
+    </Who>
     <Where>
       <Parameter name="Area" dataType="WaypointList" required="true"/>
     </Where>
