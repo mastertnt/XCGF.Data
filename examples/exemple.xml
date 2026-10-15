@@ -49,9 +49,13 @@
       </Parameters>
       <Equipments>
         <Equipment name="Radio" type="Radio">
-          <Parameters>
+          <TechnologicalData>
             <Parameter name="Frequencies" dataType="FrequencyList">30000000 30025000</Parameter>
-          </Parameters>
+            <Parameter name="MaxRange" dataType="RangeMeters">8000</Parameter>
+          </TechnologicalData>
+          <InitializationData>
+            <Parameter name="ActiveFrequency" dataType="FrequencyHz">30000000</Parameter>
+          </InitializationData>
           <Tasks>
             <Task name="Emettre" type="Transmit" duration="PT5M"/>
           </Tasks>
@@ -81,10 +85,13 @@
       <Orientation heading="270" pitch="-2" roll="0"/>
       <Equipments>
         <Equipment name="Radar" type="Radar">
-          <Parameters>
+          <TechnologicalData>
+            <Parameter name="MaxRange" dataType="RangeMeters">20000</Parameter>
+          </TechnologicalData>
+          <InitializationData>
             <Parameter name="Mode" dataType="RadarModeEnum">Search</Parameter>
             <Parameter name="Settings" dataType="RadarSettings">Search:8000</Parameter>
-          </Parameters>
+          </InitializationData>
           <Tasks>
             <Task name="Surveiller" type="Detect"/>
           </Tasks>
