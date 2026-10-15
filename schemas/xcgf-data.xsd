@@ -641,7 +641,7 @@
   <xs:complexType name="TaskDefinitionType">
     <xs:annotation>
       <xs:documentation>Définition de tâche (ex. MoveTo). Ses paramètres sont rangés selon les 5W
-        (Who, What, When, Where, Why), Who étant scindé en WhoTasker, WhoTaskee et WhoTarget.
+        (Who, What, When, Where, Why), Who étant scindé en WhoTasker, WhoTaskee et WhoAffected.
         Les trois Who ne contiennent que des entités (ReferenceData de cible Entity) ; unités et
         équipements se placent dans What ; chaque catégorie et chaque paramètre sont optionnels
         (required="false" par défaut). La tâche démarre sur son trigger d'activation et se termine
@@ -655,8 +655,8 @@
       <xs:element name="WhoTaskee" type="x:TaskParametersType" minOccurs="0">
         <xs:annotation><xs:documentation>Qui exécute la tâche ; à défaut, son porteur.</xs:documentation></xs:annotation>
       </xs:element>
-      <xs:element name="WhoTarget" type="x:TaskParametersType" minOccurs="0">
-        <xs:annotation><xs:documentation>Sur qui porte la tâche (cibles).</xs:documentation></xs:annotation>
+      <xs:element name="WhoAffected" type="x:TaskParametersType" minOccurs="0">
+        <xs:annotation><xs:documentation>Qui est concerné ou impacté par la tâche (cibles, escortés, soutenus…).</xs:documentation></xs:annotation>
       </xs:element>
       <xs:element name="What" type="x:TaskParametersType" minOccurs="0">
         <xs:annotation><xs:documentation>Quoi : modalités de l'action (vitesse, formation…), moyens employés (équipements) et autres références (unités).</xs:documentation></xs:annotation>
@@ -691,7 +691,7 @@
         <xs:element name="TaskDefinition" type="x:TaskDefinitionType" minOccurs="0" maxOccurs="unbounded">
           <!-- Nom de paramètre unique au sein d'une tâche, toutes catégories 5W confondues. -->
           <xs:unique name="TaskParameterNameUnique">
-            <xs:selector xpath="x:WhoTasker/x:Parameter|x:WhoTaskee/x:Parameter|x:WhoTarget/x:Parameter|x:What/x:Parameter|x:When/x:Parameter|x:Where/x:Parameter|x:Why/x:Parameter"/>
+            <xs:selector xpath="x:WhoTasker/x:Parameter|x:WhoTaskee/x:Parameter|x:WhoAffected/x:Parameter|x:What/x:Parameter|x:When/x:Parameter|x:Where/x:Parameter|x:Why/x:Parameter"/>
             <xs:field xpath="@name"/>
           </xs:unique>
         </xs:element>
