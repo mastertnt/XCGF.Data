@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Bibliothèque d'équipements : définitions réutilisées par les entités. -->
+<EquipmentLibrary xmlns="urn:xcgf:data:1.0">
+
+  <EquipmentDefinition name="PR4G" type="Radio">
+    <Description>Poste radio VHF.</Description>
+    <TechnologicalData>
+      <Parameter name="MinFrequency" dataType="FrequencyHz"><Value>30000000</Value></Parameter>
+      <Parameter name="MaxFrequency" dataType="FrequencyHz"><Value>87975000</Value></Parameter>
+      <Parameter name="MaxRange" dataType="RangeMeters">
+        <Value>8000</Value>
+        <Constraints>
+          <Min value="0" inclusive="false"/>
+        </Constraints>
+      </Parameter>
+    </TechnologicalData>
+    <InitializationData>
+      <!-- Fréquence active bornée par les données technologiques. -->
+      <Parameter name="ActiveFrequency" dataType="FrequencyHz">
+        <Value>30000000</Value>
+        <Constraints>
+          <Min ref="MinFrequency"/>
+          <Max ref="MaxFrequency"/>
+        </Constraints>
+      </Parameter>
+      <Parameter name="Callsign" dataType="HLAASCIIstring">
+        <Constraints>
+          <Pattern value="[A-Z]{2}[0-9]{2}"/>
+        </Constraints>
+      </Parameter>
+    </InitializationData>
+    <Tasks>
+      <Task name="Emettre" type="Transmit" duration="PT5M"/>
+    </Tasks>
+  </EquipmentDefinition>
+
+  <EquipmentDefinition name="Moteur_VBL" type="Propulsion">
+    <TechnologicalData>
+      <Parameter name="MinSpeed" dataType="SpeedMetersPerSecond"><Value>-5</Value></Parameter>
+      <Parameter name="MaxSpeed" dataType="SpeedMetersPerSecond"><Value>27.7</Value></Parameter>
+    </TechnologicalData>
+    <InitializationData>
+      <!-- Vitesse initiale : Min sur MinSpeed, Max sur MaxSpeed. -->
+      <Parameter name="InitialSpeed" dataType="SpeedMetersPerSecond">
+        <Value>0</Value>
+        <Constraints>
+          <Min ref="MinSpeed"/>
+          <Max ref="MaxSpeed"/>
+          <!-- Contrainte libre, interprétée par l'outil. -->
+          <CustomConstraint kind="Step">
+            <Argument name="step" value="0.5"/>
+          </CustomConstraint>
+        </Constraints>
+      </Parameter>
+    </InitializationData>
+  </EquipmentDefinition>
+
+  <EquipmentDefinition name="RDR_Tigre" type="Radar">
+    <TechnologicalData>
+      <Parameter name="MaxRange" dataType="RangeMeters">
+        <Value>20000</Value>
+        <Constraints>
+          <ListOfValues>
+            <Value>10000</Value>
+            <Value>20000</Value>
+            <Value>40000</Value>
+          </ListOfValues>
+        </Constraints>
+      </Parameter>
+    </TechnologicalData>
+    <InitializationData>
+      <Parameter name="Mode" dataType="RadarModeEnum"><Value>Search</Value></Parameter>
+      <Parameter name="Settings" dataType="RadarSettings">
+        <Value>Search:8000</Value>
+        <Constraints>
+          <Max ref="MaxRange"/>
+        </Constraints>
+      </Parameter>
+    </InitializationData>
+    <Tasks>
+      <Task name="Surveiller" type="Detect"/>
+    </Tasks>
+  </EquipmentDefinition>
+
+</EquipmentLibrary>

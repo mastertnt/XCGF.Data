@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 1.1.71.2.1.0.0 : plateforme terrestre, France, véhicule blindé (codes illustratifs). -->
+<Entity xmlns="urn:xcgf:data:1.0" name="VBL_01" disType="1.1.71.2.1.0.0" environment="Land" folder="Platforms/Armored">
+  <Description>Véhicule blindé léger de tête.</Description>
+  <Position latitude="48.7125" longitude="2.2010" altitude="160"/>
+  <Orientation heading="90" pitch="0" roll="0"/>
+  <Equipments>
+    <!-- S'appuie sur la définition PR4G et surcharge ses données d'initialisation. -->
+    <Equipment name="Radio" definition="PR4G">
+      <InitializationData>
+        <Parameter name="ActiveFrequency" dataType="FrequencyHz"><Value>30025000</Value></Parameter>
+        <Parameter name="Callsign" dataType="HLAASCIIstring"><Value>AB01</Value></Parameter>
+      </InitializationData>
+    </Equipment>
+    <Equipment name="Moteur" definition="Moteur_VBL">
+      <InitializationData>
+        <Parameter name="InitialSpeed" dataType="SpeedMetersPerSecond"><Value>10</Value></Parameter>
+      </InitializationData>
+    </Equipment>
+  </Equipments>
+  <Tasks>
+    <Task name="Rejoindre_PC" type="Move" start="2026-10-15T08:00:00Z" priority="1">
+      <Description>Rejoindre le poste de commandement.</Description>
+      <Parameters>
+        <Parameter name="Speed" dataType="SpeedMetersPerSecond">15</Parameter>
+      </Parameters>
+    </Task>
+  </Tasks>
+</Entity>

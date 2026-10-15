@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Types de données, sur le modèle de l'OMT HLA 1516-2010. -->
+<DataTypes xmlns="urn:xcgf:data:1.0">
+  <BasicData name="HLAinteger32BE" size="32" interpretation="Entier signé" endian="Big" encoding="Complément à deux, 32 bits"/>
+  <BasicData name="HLAfloat64BE" size="64" interpretation="Réel double précision" endian="Big" encoding="IEEE 754"/>
+  <BasicData name="HLAoctet" size="8" interpretation="Octet" endian="Big" encoding="8 bits"/>
+
+  <SimpleData name="FrequencyHz" representation="HLAfloat64BE" units="Hz" resolution="1" accuracy="1">
+    <Semantics>Fréquence radio.</Semantics>
+  </SimpleData>
+  <SimpleData name="RangeMeters" representation="HLAfloat64BE" units="m" resolution="0.1" accuracy="1"/>
+  <SimpleData name="SpeedMetersPerSecond" representation="HLAfloat64BE" units="m/s" resolution="0.01" accuracy="0.1"/>
+
+  <EnumeratedData name="RadarModeEnum" representation="HLAinteger32BE">
+    <Enumerator name="Off" value="0"/>
+    <Enumerator name="Search" value="1"/>
+    <Enumerator name="Track" value="2"/>
+  </EnumeratedData>
+
+  <ArrayData name="HLAASCIIstring" dataType="HLAoctet" cardinality="Dynamic" encoding="HLAvariableArray"/>
+  <ArrayData name="FrequencyList" dataType="FrequencyHz" cardinality="Dynamic" encoding="HLAvariableArray"/>
+
+  <FixedRecordData name="WaypointStruct">
+    <Field name="Latitude" dataType="HLAfloat64BE"/>
+    <Field name="Longitude" dataType="HLAfloat64BE"/>
+    <Field name="Altitude" dataType="RangeMeters"/>
+  </FixedRecordData>
+
+  <ArrayData name="WaypointList" dataType="WaypointStruct" cardinality="1..64" encoding="HLAvariableArray"/>
+
+  <VariantRecordData name="RadarSettings" discriminant="Mode" dataType="RadarModeEnum">
+    <Alternative enumerator="Search" name="SearchRange" dataType="RangeMeters"/>
+    <Alternative enumerator="Track" name="TrackId" dataType="HLAinteger32BE"/>
+  </VariantRecordData>
+</DataTypes>
