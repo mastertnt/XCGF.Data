@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Bibliothèque de tâches, référencées par les équipements, les entités et les unités (TaskRef).
+  Paramètres rangés selon les 5W, tous optionnels sauf required="true".
+-->
+<TaskLibrary xmlns="urn:xcgf:data:1.0">
+
+  <TaskDefinition name="MoveTo">
+    <Description>Se déplacer jusqu'à une destination.</Description>
+    <Who>
+      <Parameter name="Escort" dataType="HLAASCIIstring"/>
+    </Who>
+    <What>
+      <Parameter name="Speed" dataType="SpeedMetersPerSecond">
+        <Value>10</Value>
+        <Constraints>
+          <Min value="0" inclusive="false"/>
+        </Constraints>
+      </Parameter>
+      <Parameter name="Formation" dataType="HLAASCIIstring">
+        <Constraints>
+          <ListOfValues>
+            <Value>Column</Value>
+            <Value>Line</Value>
+            <Value>Wedge</Value>
+          </ListOfValues>
+        </Constraints>
+      </Parameter>
+    </What>
+    <When>
+      <Parameter name="MaxDuration" dataType="DurationSeconds"/>
+    </When>
+    <Where>
+      <Parameter name="Destination" dataType="WaypointStruct" required="true"/>
+      <Parameter name="Route" dataType="WaypointList"/>
+    </Where>
+    <Why>
+      <Parameter name="Intent" dataType="HLAASCIIstring"/>
+    </Why>
+    <ActivationTrigger>
+      <OnEvent event="OrderReceived"/>
+    </ActivationTrigger>
+    <ExitTriggers>
+      <ExitTrigger outcome="Success">
+        <OnPositionReached parameter="Destination" tolerance="50"/>
+      </ExitTrigger>
+      <ExitTrigger outcome="Failure">
+        <AtTime delay="PT1H"/>
+      </ExitTrigger>
+      <ExitTrigger outcome="Aborted">
+        <OnEvent event="EnemyDetected"/>
+      </ExitTrigger>
+    </ExitTriggers>
+  </TaskDefinition>
+
+  <TaskDefinition name="Patrol">
+    <When>
+      <Parameter name="Duration" dataType="DurationSeconds"><Value>7200</Value></Parameter>
+    </When>
+    <Where>
+      <Parameter name="Route" dataType="WaypointList" required="true"/>
+    </Where>
+    <ActivationTrigger>
+      <OnTaskEnd task="MoveTo" outcome="Success"/>
+    </ActivationTrigger>
+    <ExitTriggers>
+      <ExitTrigger>
+        <AtTime delay="PT2H"/>
+      </ExitTrigger>
+    </ExitTriggers>
+  </TaskDefinition>
+
+  <TaskDefinition name="Reconnaissance">
+    <Where>
+      <Parameter name="Area" dataType="WaypointList" required="true"/>
+    </Where>
+    <ActivationTrigger>
+      <AtTime time="2026-10-15T09:00:00Z"/>
+    </ActivationTrigger>
+    <ExitTriggers>
+      <ExitTrigger>
+        <CustomTrigger kind="AreaCovered">
+          <Argument name="coverage" value="0.9"/>
+        </CustomTrigger>
+      </ExitTrigger>
+    </ExitTriggers>
+  </TaskDefinition>
+
+  <TaskDefinition name="Transmit">
+    <What>
+      <Parameter name="Message" dataType="HLAASCIIstring"/>
+    </What>
+    <ActivationTrigger>
+      <Immediate/>
+    </ActivationTrigger>
+    <ExitTriggers>
+      <ExitTrigger>
+        <AtTime delay="PT5M"/>
+      </ExitTrigger>
+    </ExitTriggers>
+  </TaskDefinition>
+
+  <TaskDefinition name="Detect">
+    <ActivationTrigger>
+      <Immediate/>
+    </ActivationTrigger>
+    <ExitTriggers>
+      <ExitTrigger>
+        <OnCondition expression="Mode = Off"/>
+      </ExitTrigger>
+    </ExitTriggers>
+  </TaskDefinition>
+
+</TaskLibrary>

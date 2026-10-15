@@ -6,4 +6,7 @@
     <Equipment name="Radio" definition="PR4G"/>
     <Equipment name="Moteur" definition="Moteur_VBL"/>
   </Equipments>
+  <Tasks>
+    <TaskRef task="MoveTo"/>
+  </Tasks>
 </Entity>

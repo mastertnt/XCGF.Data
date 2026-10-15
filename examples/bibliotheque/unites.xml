@@ -6,15 +6,13 @@
       <EntityRef entity="VBL_01"/>
       <EntityRef entity="VBL_02"/>
       <Tasks>
-        <Task name="Patrouiller" type="Patrol" duration="PT2H">
-          <Parameters>
-            <Parameter name="Route" dataType="WaypointList">48.71,2.20,160 48.72,2.21,165 48.73,2.20,170</Parameter>
-          </Parameters>
-        </Task>
+        <TaskRef task="Patrol">
+          <Parameter name="Route" dataType="WaypointList"><Value>48.71,2.20,160 48.72,2.21,165 48.73,2.20,170</Value></Parameter>
+        </TaskRef>
       </Tasks>
     </Unit>
     <Tasks>
-      <Task name="Reconnaitre_zone" type="Reconnaissance" start="2026-10-15T09:00:00Z"/>
+      <TaskRef task="Reconnaissance"/>
     </Tasks>
   </Unit>
 </Units>

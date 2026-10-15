@@ -9,9 +9,10 @@
       Un équipement d'entité n'existe qu'à l'intérieur de celle-ci ; il peut s'appuyer
       sur une définition de la bibliothèque ;
     - des unités, groupes d'entités (et éventuellement de sous-unités) ;
-    - des tâches, rattachables aux équipements, aux entités et aux unités.
+    - une bibliothèque de tâches (paramètres 5W optionnels, trigger d'activation, triggers de
+      sortie), référencées par les équipements, les entités et les unités.
 
-  Découpage en fichiers : DataTypes, EquipmentLibrary, Entities, Entity et Units sont des
+  Découpage en fichiers : DataTypes, EquipmentLibrary, TaskLibrary, Entities, Entity et Units sont des
   éléments globaux, donc chacun peut être la racine d'un fichier validable seul. Un document
   XcgfData les assemble par XInclude (xi:include) ; toutes les contraintes de référence
   (types, définitions d'équipements, entités) sont vérifiées sur le document assemblé :
@@ -19,7 +20,7 @@
 
   Extensibilité des contraintes : toute contrainte est un élément du groupe de substitution
   x:Constraint. Un schéma tiers peut en ajouter en dérivant x:ConstraintType ; CustomConstraint
-  couvre les besoins ponctuels sans nouveau schéma.
+  couvre les besoins ponctuels sans nouveau schéma. Les triggers suivent le même principe (x:Trigger).
 -->
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
            xmlns:x="urn:xcgf:data:1.0"
@@ -41,6 +42,7 @@
       <xs:choice minOccurs="0" maxOccurs="unbounded">
         <xs:element ref="x:DataTypes"/>
         <xs:element ref="x:EquipmentLibrary"/>
+        <xs:element ref="x:TaskLibrary"/>
         <xs:element ref="x:Entities"/>
         <xs:element ref="x:Units"/>
       </xs:choice>
@@ -104,6 +106,18 @@
       <xs:selector xpath=".//x:Unit"/>
       <xs:field xpath="@name"/>
     </xs:key>
+
+    <!-- Nom de définition de tâche unique dans la bibliothèque. -->
+    <xs:key name="TaskDefinitionKey">
+      <xs:selector xpath="x:TaskLibrary/x:TaskDefinition"/>
+      <xs:field xpath="@name"/>
+    </xs:key>
+
+    <!-- Équipements, entités et unités ne référencent que des tâches définies. -->
+    <xs:keyref name="TaskRef" refer="x:TaskDefinitionKey">
+      <xs:selector xpath=".//x:TaskRef"/>
+      <xs:field xpath="@task"/>
+    </xs:keyref>
 
     <!-- Une unité ne peut référencer qu'une entité existante. -->
     <xs:keyref name="UnitEntityRef" refer="x:EntityNameKey">
@@ -302,6 +316,11 @@
 
   <!-- Contraintes : groupe de substitution extensible -->
 
+  <xs:complexType name="ArgumentType">
+    <xs:attribute name="name" type="x:IdentifierType" use="required"/>
+    <xs:attribute name="value" type="xs:string" use="required"/>
+  </xs:complexType>
+
   <xs:complexType name="ConstraintType" abstract="true">
     <xs:annotation>
       <xs:documentation>Base de toute contrainte. Pour ajouter une contrainte, dériver ce type et déclarer
@@ -364,12 +383,7 @@
     <xs:complexContent>
       <xs:extension base="x:ConstraintType">
         <xs:sequence>
-          <xs:element name="Argument" minOccurs="0" maxOccurs="unbounded">
-            <xs:complexType>
-              <xs:attribute name="name" type="x:IdentifierType" use="required"/>
-              <xs:attribute name="value" type="xs:string" use="required"/>
-            </xs:complexType>
-          </xs:element>
+          <xs:element name="Argument" type="x:ArgumentType" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
         <xs:attribute name="kind" type="x:IdentifierType" use="required"/>
       </xs:extension>
@@ -407,26 +421,216 @@
     </xs:sequence>
   </xs:complexType>
 
-  <xs:complexType name="TaskType">
+  <!-- Triggers : groupe de substitution extensible -->
+
+  <xs:complexType name="TriggerType" abstract="true">
     <xs:annotation>
-      <xs:documentation>Tâche générique, rattachable à un équipement, une entité ou une unité.</xs:documentation>
+      <xs:documentation>Base de tout trigger. Pour en ajouter, dériver ce type et déclarer un élément
+        avec substitutionGroup="x:Trigger" ; CustomTrigger couvre les besoins ponctuels.</xs:documentation>
+    </xs:annotation>
+  </xs:complexType>
+
+  <xs:element name="Trigger" type="x:TriggerType" abstract="true"/>
+
+  <xs:complexType name="ImmediateTriggerType">
+    <xs:complexContent>
+      <xs:extension base="x:TriggerType"/>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:element name="Immediate" type="x:ImmediateTriggerType" substitutionGroup="x:Trigger">
+    <xs:annotation><xs:documentation>Déclenché dès que possible (activation du porteur, ou démarrage de la tâche pour une sortie).</xs:documentation></xs:annotation>
+  </xs:element>
+
+  <xs:complexType name="AtTimeTriggerType">
+    <xs:complexContent>
+      <xs:extension base="x:TriggerType">
+        <xs:attribute name="time" type="xs:dateTime" use="optional">
+          <xs:annotation><xs:documentation>Instant absolu.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="delay" type="xs:duration" use="optional">
+          <xs:annotation><xs:documentation>Délai relatif (début de scénario pour une activation, début de la tâche pour une sortie).
+            Exactement un de time ou delay doit être renseigné.</xs:documentation></xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:element name="AtTime" type="x:AtTimeTriggerType" substitutionGroup="x:Trigger"/>
+
+  <xs:complexType name="OnTaskEndTriggerType">
+    <xs:complexContent>
+      <xs:extension base="x:TriggerType">
+        <xs:attribute name="task" type="x:IdentifierType" use="required"/>
+        <xs:attribute name="outcome" type="xs:string" use="optional">
+          <xs:annotation><xs:documentation>Issue attendue de la tâche (ex. Success) ; toute issue si absent.</xs:documentation></xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:element name="OnTaskEnd" type="x:OnTaskEndTriggerType" substitutionGroup="x:Trigger">
+    <xs:annotation><xs:documentation>Fin d'une autre tâche (enchaînement).</xs:documentation></xs:annotation>
+  </xs:element>
+
+  <xs:complexType name="OnPositionReachedTriggerType">
+    <xs:complexContent>
+      <xs:extension base="x:TriggerType">
+        <xs:attribute name="parameter" type="x:IdentifierType" use="optional">
+          <xs:annotation><xs:documentation>Paramètre Where de la tâche donnant la position à atteindre (ex. Destination).</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="tolerance" type="xs:double" use="optional" default="0">
+          <xs:annotation><xs:documentation>Distance en mètres sous laquelle la position est considérée atteinte.</xs:documentation></xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:element name="OnPositionReached" type="x:OnPositionReachedTriggerType" substitutionGroup="x:Trigger"/>
+
+  <xs:complexType name="OnEventTriggerType">
+    <xs:complexContent>
+      <xs:extension base="x:TriggerType">
+        <xs:attribute name="event" type="xs:string" use="required"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:element name="OnEvent" type="x:OnEventTriggerType" substitutionGroup="x:Trigger">
+    <xs:annotation><xs:documentation>Événement nommé (ex. EnemyDetected, OrderReceived).</xs:documentation></xs:annotation>
+  </xs:element>
+
+  <xs:complexType name="OnConditionTriggerType">
+    <xs:complexContent>
+      <xs:extension base="x:TriggerType">
+        <xs:attribute name="expression" type="xs:string" use="required"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:element name="OnCondition" type="x:OnConditionTriggerType" substitutionGroup="x:Trigger">
+    <xs:annotation><xs:documentation>Condition évaluée par l'outil (ex. Fuel &lt; 0.2).</xs:documentation></xs:annotation>
+  </xs:element>
+
+  <xs:complexType name="CustomTriggerType">
+    <xs:complexContent>
+      <xs:extension base="x:TriggerType">
+        <xs:sequence>
+          <xs:element name="Argument" type="x:ArgumentType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="kind" type="x:IdentifierType" use="required"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:element name="CustomTrigger" type="x:CustomTriggerType" substitutionGroup="x:Trigger"/>
+
+  <xs:complexType name="ActivationTriggerType">
+    <xs:sequence>
+      <xs:element ref="x:Trigger"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ExitTriggerType">
+    <xs:sequence>
+      <xs:element ref="x:Trigger"/>
+    </xs:sequence>
+    <xs:attribute name="outcome" type="xs:string" use="optional" default="Success">
+      <xs:annotation><xs:documentation>Issue de la tâche quand ce trigger la termine (ex. Success, Failure, Aborted).</xs:documentation></xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <!-- Paramètres de tâche (5W) -->
+
+  <xs:complexType name="TaskParameterType">
+    <xs:annotation>
+      <xs:documentation>Paramètre déclaré par une définition de tâche : type, valeur par défaut éventuelle, contraintes.</xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="x:DataItemType">
+        <xs:attribute name="required" type="xs:boolean" use="optional" default="false"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="TaskParametersType">
+    <xs:sequence>
+      <xs:element name="Parameter" type="x:TaskParameterType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Définition de tâche -->
+
+  <xs:complexType name="TaskDefinitionType">
+    <xs:annotation>
+      <xs:documentation>Définition de tâche (ex. MoveTo). Ses paramètres sont rangés selon les 5W
+        (Who, What, When, Where, Why) ; chaque catégorie et chaque paramètre sont optionnels
+        (required="false" par défaut). La tâche démarre sur son trigger d'activation et se termine
+        sur le premier de ses triggers de sortie.</xs:documentation>
     </xs:annotation>
     <xs:sequence>
       <xs:element name="Description" type="xs:string" minOccurs="0"/>
-      <xs:element name="Parameters" type="x:ParametersType" minOccurs="0"/>
+      <xs:element name="Who" type="x:TaskParametersType" minOccurs="0">
+        <xs:annotation><xs:documentation>Qui : acteurs, cibles.</xs:documentation></xs:annotation>
+      </xs:element>
+      <xs:element name="What" type="x:TaskParametersType" minOccurs="0">
+        <xs:annotation><xs:documentation>Quoi : modalités de l'action (vitesse, formation…).</xs:documentation></xs:annotation>
+      </xs:element>
+      <xs:element name="When" type="x:TaskParametersType" minOccurs="0">
+        <xs:annotation><xs:documentation>Quand : horaires, durée.</xs:documentation></xs:annotation>
+      </xs:element>
+      <xs:element name="Where" type="x:TaskParametersType" minOccurs="0">
+        <xs:annotation><xs:documentation>Où : position, itinéraire, zone.</xs:documentation></xs:annotation>
+      </xs:element>
+      <xs:element name="Why" type="x:TaskParametersType" minOccurs="0">
+        <xs:annotation><xs:documentation>Pourquoi : intention, effet recherché.</xs:documentation></xs:annotation>
+      </xs:element>
+      <xs:element name="ActivationTrigger" type="x:ActivationTriggerType"/>
+      <xs:element name="ExitTriggers">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="ExitTrigger" type="x:ExitTriggerType" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
     </xs:sequence>
     <xs:attribute name="name" type="x:IdentifierType" use="required"/>
-    <xs:attribute name="type" type="xs:string" use="required">
-      <xs:annotation><xs:documentation>Nature de la tâche (ex. Move, Patrol, Detect).</xs:documentation></xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="start" type="xs:dateTime" use="optional"/>
-    <xs:attribute name="duration" type="xs:duration" use="optional"/>
-    <xs:attribute name="priority" type="xs:nonNegativeInteger" use="optional"/>
+  </xs:complexType>
+
+  <xs:element name="TaskLibrary">
+    <xs:annotation>
+      <xs:documentation>Bibliothèque de tâches ; peut constituer un fichier à elle seule.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="TaskDefinition" type="x:TaskDefinitionType" minOccurs="0" maxOccurs="unbounded">
+          <!-- Nom de paramètre unique au sein d'une tâche, toutes catégories 5W confondues. -->
+          <xs:unique name="TaskParameterNameUnique">
+            <xs:selector xpath="x:Who/x:Parameter|x:What/x:Parameter|x:When/x:Parameter|x:Where/x:Parameter|x:Why/x:Parameter"/>
+            <xs:field xpath="@name"/>
+          </xs:unique>
+        </xs:element>
+      </xs:sequence>
+      <xs:attributeGroup ref="x:FileRootAttributes"/>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- Référence de tâche -->
+
+  <xs:complexType name="TaskRefType">
+    <xs:annotation>
+      <xs:documentation>Tâche que peut réaliser son porteur (équipement, entité ou unité), par référence à une
+        définition de la TaskLibrary. Les Parameter éventuels fixent des valeurs propres au porteur.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="Parameter" type="x:DataItemType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="task" type="x:IdentifierType" use="required"/>
   </xs:complexType>
 
   <xs:complexType name="TasksType">
     <xs:sequence>
-      <xs:element name="Task" type="x:TaskType" maxOccurs="unbounded"/>
+      <xs:element name="TaskRef" type="x:TaskRefType" maxOccurs="unbounded"/>
     </xs:sequence>
   </xs:complexType>
 
