@@ -643,20 +643,21 @@
       <xs:documentation>Définition de tâche (ex. MoveTo). Ses paramètres sont rangés selon les 5W
         (Who, What, When, Where, Why), Who étant scindé en WhoTasker, WhoTaskee et WhoAffected.
         Les trois Who ne contiennent que des entités (ReferenceData de cible Entity) ; unités et
-        équipements se placent dans What ; chaque catégorie et chaque paramètre sont optionnels
-        (required="false" par défaut). La tâche démarre sur son trigger d'activation et se termine
+        équipements se placent dans What ; WhoTaskee est obligatoire, les autres catégories sont
+        optionnelles, et chaque paramètre est optionnel (required="false" par défaut). La tâche démarre sur son trigger d'activation et se termine
         sur le premier de ses triggers de sortie.</xs:documentation>
     </xs:annotation>
     <xs:sequence>
       <xs:element name="Description" type="xs:string" minOccurs="0"/>
       <xs:element name="WhoTasker" type="x:TaskParametersType" minOccurs="0">
-        <xs:annotation><xs:documentation>Qui donne l'ordre (donneur d'ordre).</xs:documentation></xs:annotation>
+        <xs:annotation><xs:documentation>Qui donne l'ordre (donneur d'ordre). Optionnel.</xs:documentation></xs:annotation>
       </xs:element>
-      <xs:element name="WhoTaskee" type="x:TaskParametersType" minOccurs="0">
-        <xs:annotation><xs:documentation>Qui exécute la tâche ; à défaut, son porteur.</xs:documentation></xs:annotation>
+      <xs:element name="WhoTaskee" type="x:TaskParametersType">
+        <xs:annotation><xs:documentation>Qui exécute la tâche. Obligatoire dans toute définition de tâche ;
+          si la valeur n'est pas fournie, l'exécutant est le porteur de la tâche.</xs:documentation></xs:annotation>
       </xs:element>
       <xs:element name="WhoAffected" type="x:TaskParametersType" minOccurs="0">
-        <xs:annotation><xs:documentation>Qui est concerné ou impacté par la tâche (cibles, escortés, soutenus…).</xs:documentation></xs:annotation>
+        <xs:annotation><xs:documentation>Qui est concerné ou impacté par la tâche (cibles, escortés, soutenus…). Optionnel.</xs:documentation></xs:annotation>
       </xs:element>
       <xs:element name="What" type="x:TaskParametersType" minOccurs="0">
         <xs:annotation><xs:documentation>Quoi : modalités de l'action (vitesse, formation…), moyens employés (équipements) et autres références (unités).</xs:documentation></xs:annotation>

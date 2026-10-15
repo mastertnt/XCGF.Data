@@ -63,6 +63,9 @@
   </TaskDefinition>
 
   <TaskDefinition name="Patrol">
+    <WhoTaskee>
+      <Parameter name="Executor" dataType="EntityReference"/>
+    </WhoTaskee>
     <When>
       <Parameter name="Duration" dataType="DurationSeconds"><Value>7200</Value></Parameter>
     </When>
@@ -80,6 +83,9 @@
   </TaskDefinition>
 
   <TaskDefinition name="Reconnaissance">
+    <WhoTaskee>
+      <Parameter name="Executor" dataType="EntityReference"/>
+    </WhoTaskee>
     <WhoAffected>
       <Parameter name="Target" dataType="EntityReference"/>
     </WhoAffected>
@@ -104,6 +110,9 @@
   </TaskDefinition>
 
   <TaskDefinition name="Transmit">
+    <WhoTaskee>
+      <Parameter name="Executor" dataType="EntityReference"/>
+    </WhoTaskee>
     <What>
       <Parameter name="Message" dataType="HLAASCIIstring"/>
     </What>
@@ -118,6 +127,9 @@
   </TaskDefinition>
 
   <TaskDefinition name="Detect">
+    <WhoTaskee>
+      <Parameter name="Executor" dataType="EntityReference"/>
+    </WhoTaskee>
     <ActivationTrigger>
       <Immediate/>
     </ActivationTrigger>
