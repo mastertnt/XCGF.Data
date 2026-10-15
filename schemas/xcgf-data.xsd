@@ -648,10 +648,10 @@
     <xs:sequence>
       <xs:element name="Description" type="xs:string" minOccurs="0"/>
       <xs:element name="Who" type="x:TaskParametersType" minOccurs="0">
-        <xs:annotation><xs:documentation>Qui : acteurs, cibles.</xs:documentation></xs:annotation>
+        <xs:annotation><xs:documentation>Qui : acteurs et cibles, c'est-à-dire des unités ou des entités (plateformes). Les équipements n'en font pas partie : ce sont des moyens, à placer dans What.</xs:documentation></xs:annotation>
       </xs:element>
       <xs:element name="What" type="x:TaskParametersType" minOccurs="0">
-        <xs:annotation><xs:documentation>Quoi : modalités de l'action (vitesse, formation…).</xs:documentation></xs:annotation>
+        <xs:annotation><xs:documentation>Quoi : modalités de l'action (vitesse, formation…) et moyens employés, dont les équipements.</xs:documentation></xs:annotation>
       </xs:element>
       <xs:element name="When" type="x:TaskParametersType" minOccurs="0">
         <xs:annotation><xs:documentation>Quand : horaires, durée.</xs:documentation></xs:annotation>

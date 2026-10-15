@@ -73,8 +73,11 @@
   <TaskDefinition name="Reconnaissance">
     <Who>
       <Parameter name="ReportTo" dataType="UnitReference"/>
-      <Parameter name="Sensor" dataType="EquipmentReference"/>
     </Who>
+    <What>
+      <!-- Moyen employé : un équipement, donc dans What et non dans Who. -->
+      <Parameter name="Sensor" dataType="EquipmentReference"/>
+    </What>
     <Where>
       <Parameter name="Area" dataType="WaypointList" required="true"/>
     </Where>
