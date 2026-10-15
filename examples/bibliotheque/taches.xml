@@ -16,8 +16,10 @@
     <WhoTaskee>
       <Parameter name="Executor" dataType="EntityReference" required="false"/>
     </WhoTaskee>
-    <What>
+    <WhoAffected>
       <Parameter name="Escort" dataType="EntityReference" required="false"/>
+    </WhoAffected>
+    <What>
       <Parameter name="Speed" dataType="SpeedMetersPerSecond" required="false">
         <Value>10</Value>
         <Constraints>
@@ -78,9 +80,9 @@
   </TaskDefinition>
 
   <TaskDefinition name="Reconnaissance">
-    <WhoTarget>
+    <WhoAffected>
       <Parameter name="Target" dataType="EntityReference"/>
-    </WhoTarget>
+    </WhoAffected>
     <What>
       <!-- Les Who ne contiennent que des entités : unité et équipement vont dans What. -->
       <Parameter name="ReportTo" dataType="UnitReference"/>
