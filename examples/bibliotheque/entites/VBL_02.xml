@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Entity xmlns="urn:xcgf:data:1.0" name="VBL_02" disType="1.1.71.2.1.0.0" environment="Land" folder="Platforms/Armored">
+  <Position latitude="48.7130" longitude="2.2025" altitude="161"/>
+  <Orientation heading="92.5" pitch="1.5" roll="-0.5"/>
+  <Equipments>
+    <Equipment name="Radio" definition="PR4G"/>
+    <Equipment name="Moteur" definition="Moteur_VBL"/>
+  </Equipments>
+</Entity>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Units xmlns="urn:xcgf:data:1.0">
+  <Unit name="Groupement_A">
+    <EntityRef entity="Tigre_01"/>
+    <Unit name="Patrouille_1">
+      <EntityRef entity="VBL_01"/>
+      <EntityRef entity="VBL_02"/>
+      <Tasks>
+        <Task name="Patrouiller" type="Patrol" duration="PT2H">
+          <Parameters>
+            <Parameter name="Route" dataType="WaypointList">48.71,2.20,160 48.72,2.21,165 48.73,2.20,170</Parameter>
+          </Parameters>
+        </Task>
+      </Tasks>
+    </Unit>
+    <Tasks>
+      <Task name="Reconnaitre_zone" type="Reconnaissance" start="2026-10-15T09:00:00Z"/>
+    </Tasks>
+  </Unit>
+</Units>

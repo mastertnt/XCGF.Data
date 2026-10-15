@@ -4,10 +4,22 @@
 
   Le document décrit :
     - des types de données, sur le modèle de l'OMT HLA (IEEE 1516-2010) ;
-    - des entités (position, orientation, type DIS, nom unique), conteneurs d'équipements ;
-    - des équipements, qui n'existent qu'à l'intérieur d'une entité ;
+    - une bibliothèque d'équipements (définitions réutilisables) ;
+    - des entités (position, orientation, type DIS, nom unique), conteneurs d'équipements.
+      Un équipement d'entité n'existe qu'à l'intérieur de celle-ci ; il peut s'appuyer
+      sur une définition de la bibliothèque ;
     - des unités, groupes d'entités (et éventuellement de sous-unités) ;
     - des tâches, rattachables aux équipements, aux entités et aux unités.
+
+  Découpage en fichiers : DataTypes, EquipmentLibrary, Entities, Entity et Units sont des
+  éléments globaux, donc chacun peut être la racine d'un fichier validable seul. Un document
+  XcgfData les assemble par XInclude (xi:include) ; toutes les contraintes de référence
+  (types, définitions d'équipements, entités) sont vérifiées sur le document assemblé :
+    xmllint -xinclude -noout -schema schemas/xcgf-data.xsd examples/bibliotheque/bibliotheque.xml
+
+  Extensibilité des contraintes : toute contrainte est un élément du groupe de substitution
+  x:Constraint. Un schéma tiers peut en ajouter en dérivant x:ConstraintType ; CustomConstraint
+  couvre les besoins ponctuels sans nouveau schéma.
 -->
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
            xmlns:x="urn:xcgf:data:1.0"
@@ -22,14 +34,16 @@
 
   <xs:element name="XcgfData">
     <xs:annotation>
-      <xs:documentation>Racine d'un document XCGF : types de données, entités et unités.</xs:documentation>
+      <xs:documentation>Racine d'un document XCGF. Les sections peuvent apparaître plusieurs fois et
+        dans un ordre quelconque, ce qui permet d'assembler une bibliothèque découpée en fichiers.</xs:documentation>
     </xs:annotation>
     <xs:complexType>
-      <xs:sequence>
-        <xs:element name="DataTypes" type="x:DataTypesType" minOccurs="0"/>
-        <xs:element name="Entities" type="x:EntitiesType" minOccurs="0"/>
-        <xs:element name="Units" type="x:UnitsType" minOccurs="0"/>
-      </xs:sequence>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element ref="x:DataTypes"/>
+        <xs:element ref="x:EquipmentLibrary"/>
+        <xs:element ref="x:Entities"/>
+        <xs:element ref="x:Units"/>
+      </xs:choice>
       <xs:attribute name="version" type="xs:string" use="optional"/>
     </xs:complexType>
 
@@ -65,6 +79,18 @@
     <xs:keyref name="DiscriminantTypeRef" refer="x:EnumeratedDataKey">
       <xs:selector xpath="x:DataTypes/x:VariantRecordData"/>
       <xs:field xpath="@dataType"/>
+    </xs:keyref>
+
+    <!-- Nom de définition d'équipement unique dans la bibliothèque. -->
+    <xs:key name="EquipmentDefinitionKey">
+      <xs:selector xpath="x:EquipmentLibrary/x:EquipmentDefinition"/>
+      <xs:field xpath="@name"/>
+    </xs:key>
+
+    <!-- Un équipement d'entité ne peut s'appuyer que sur une définition existante. -->
+    <xs:keyref name="EquipmentDefinitionRef" refer="x:EquipmentDefinitionKey">
+      <xs:selector xpath="x:Entities/x:Entity/x:Equipments/x:Equipment"/>
+      <xs:field xpath="@definition"/>
     </xs:keyref>
 
     <!-- Nom d'entité unique parmi l'ensemble des entités du document. -->
@@ -119,6 +145,13 @@
   <!-- Types de données (OMT HLA 1516-2010)                               -->
   <!-- ================================================================== -->
 
+  <!-- Attributs xml:* (notamment xml:base, ajouté par XInclude) sur les racines de fichier. -->
+  <xs:attributeGroup name="FileRootAttributes">
+    <xs:anyAttribute namespace="http://www.w3.org/XML/1998/namespace" processContents="skip"/>
+  </xs:attributeGroup>
+
+  <xs:element name="DataTypes" type="x:DataTypesType"/>
+
   <xs:complexType name="DataTypesType">
     <xs:annotation>
       <xs:documentation>Déclarations de types, dans un ordre quelconque.</xs:documentation>
@@ -131,6 +164,7 @@
       <xs:element name="FixedRecordData" type="x:FixedRecordDataType"/>
       <xs:element name="VariantRecordData" type="x:VariantRecordDataType"/>
     </xs:choice>
+    <xs:attributeGroup ref="x:FileRootAttributes"/>
   </xs:complexType>
 
   <xs:complexType name="DataTypeBase" abstract="true">
@@ -266,49 +300,98 @@
     </xs:sequence>
   </xs:complexType>
 
-  <xs:complexType name="BoundValueType">
-    <xs:simpleContent>
-      <xs:extension base="xs:string">
+  <!-- Contraintes : groupe de substitution extensible -->
+
+  <xs:complexType name="ConstraintType" abstract="true">
+    <xs:annotation>
+      <xs:documentation>Base de toute contrainte. Pour ajouter une contrainte, dériver ce type et déclarer
+        un élément avec substitutionGroup="x:Constraint" (dans ce schéma ou un schéma tiers).</xs:documentation>
+    </xs:annotation>
+  </xs:complexType>
+
+  <xs:element name="Constraint" type="x:ConstraintType" abstract="true"/>
+
+  <xs:complexType name="BoundConstraintType">
+    <xs:complexContent>
+      <xs:extension base="x:ConstraintType">
+        <xs:attribute name="value" type="xs:string" use="optional">
+          <xs:annotation><xs:documentation>Borne littérale.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="ref" type="x:IdentifierType" use="optional">
+          <xs:annotation><xs:documentation>Borne donnée par une donnée technologique du même équipement (ex. MaxSpeed).
+            Exactement un de value ou ref doit être renseigné.</xs:documentation></xs:annotation>
+        </xs:attribute>
         <xs:attribute name="inclusive" type="xs:boolean" use="optional" default="true"/>
       </xs:extension>
-    </xs:simpleContent>
+    </xs:complexContent>
   </xs:complexType>
+
+  <xs:element name="Min" type="x:BoundConstraintType" substitutionGroup="x:Constraint">
+    <xs:annotation><xs:documentation>Borne inférieure (incluse par défaut).</xs:documentation></xs:annotation>
+  </xs:element>
+
+  <xs:element name="Max" type="x:BoundConstraintType" substitutionGroup="x:Constraint">
+    <xs:annotation><xs:documentation>Borne supérieure (incluse par défaut).</xs:documentation></xs:annotation>
+  </xs:element>
+
+  <xs:complexType name="ListOfValuesConstraintType">
+    <xs:complexContent>
+      <xs:extension base="x:ConstraintType">
+        <xs:sequence>
+          <xs:element name="Value" type="xs:string" maxOccurs="unbounded"/>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:element name="ListOfValues" type="x:ListOfValuesConstraintType" substitutionGroup="x:Constraint">
+    <xs:annotation><xs:documentation>Liste fermée des valeurs autorisées.</xs:documentation></xs:annotation>
+  </xs:element>
+
+  <xs:complexType name="PatternConstraintType">
+    <xs:complexContent>
+      <xs:extension base="x:ConstraintType">
+        <xs:attribute name="value" type="xs:string" use="required"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:element name="Pattern" type="x:PatternConstraintType" substitutionGroup="x:Constraint">
+    <xs:annotation><xs:documentation>Expression régulière que la valeur textuelle doit respecter.</xs:documentation></xs:annotation>
+  </xs:element>
+
+  <xs:complexType name="CustomConstraintType">
+    <xs:complexContent>
+      <xs:extension base="x:ConstraintType">
+        <xs:sequence>
+          <xs:element name="Argument" minOccurs="0" maxOccurs="unbounded">
+            <xs:complexType>
+              <xs:attribute name="name" type="x:IdentifierType" use="required"/>
+              <xs:attribute name="value" type="xs:string" use="required"/>
+            </xs:complexType>
+          </xs:element>
+        </xs:sequence>
+        <xs:attribute name="kind" type="x:IdentifierType" use="required"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:element name="CustomConstraint" type="x:CustomConstraintType" substitutionGroup="x:Constraint">
+    <xs:annotation><xs:documentation>Contrainte libre, identifiée par kind et interprétée par l'outil (ex. Step).</xs:documentation></xs:annotation>
+  </xs:element>
 
   <xs:complexType name="ConstraintsType">
     <xs:annotation>
-      <xs:documentation>Contraintes sur la valeur d'une donnée technologique. Toutes sont optionnelles et cumulables.</xs:documentation>
+      <xs:documentation>Contraintes cumulables sur la valeur d'une donnée d'équipement.</xs:documentation>
     </xs:annotation>
     <xs:sequence>
-      <xs:element name="Min" type="x:BoundValueType" minOccurs="0">
-        <xs:annotation><xs:documentation>Borne inférieure (incluse par défaut).</xs:documentation></xs:annotation>
-      </xs:element>
-      <xs:element name="Max" type="x:BoundValueType" minOccurs="0">
-        <xs:annotation><xs:documentation>Borne supérieure (incluse par défaut).</xs:documentation></xs:annotation>
-      </xs:element>
-      <xs:element name="Bound" minOccurs="0">
-        <xs:annotation><xs:documentation>Bornes de taille, pour un tableau ou une chaîne : nombre d'éléments minimal et maximal.</xs:documentation></xs:annotation>
-        <xs:complexType>
-          <xs:attribute name="minLength" type="xs:nonNegativeInteger" use="optional"/>
-          <xs:attribute name="maxLength" type="xs:nonNegativeInteger" use="optional"/>
-        </xs:complexType>
-      </xs:element>
-      <xs:element name="ListOfValues" minOccurs="0">
-        <xs:annotation><xs:documentation>Liste fermée des valeurs autorisées.</xs:documentation></xs:annotation>
-        <xs:complexType>
-          <xs:sequence>
-            <xs:element name="Value" type="xs:string" maxOccurs="unbounded"/>
-          </xs:sequence>
-        </xs:complexType>
-      </xs:element>
-      <xs:element name="Pattern" type="xs:string" minOccurs="0">
-        <xs:annotation><xs:documentation>Expression régulière que la valeur textuelle doit respecter.</xs:documentation></xs:annotation>
-      </xs:element>
+      <xs:element ref="x:Constraint" maxOccurs="unbounded"/>
     </xs:sequence>
   </xs:complexType>
 
-  <xs:complexType name="TechnologicalParameterType">
+  <xs:complexType name="DataItemType">
     <xs:annotation>
-      <xs:documentation>Donnée technologique : valeur typée, éventuellement contrainte.</xs:documentation>
+      <xs:documentation>Donnée d'équipement (technologique ou d'initialisation) : valeur typée, éventuellement contrainte.</xs:documentation>
     </xs:annotation>
     <xs:sequence>
       <xs:element name="Value" type="xs:string" minOccurs="0"/>
@@ -318,9 +401,9 @@
     <xs:attribute name="dataType" type="x:IdentifierType" use="required"/>
   </xs:complexType>
 
-  <xs:complexType name="TechnologicalDataType">
+  <xs:complexType name="DataItemsType">
     <xs:sequence>
-      <xs:element name="Parameter" type="x:TechnologicalParameterType" maxOccurs="unbounded"/>
+      <xs:element name="Parameter" type="x:DataItemType" maxOccurs="unbounded"/>
     </xs:sequence>
   </xs:complexType>
 
@@ -351,24 +434,62 @@
   <!-- Équipements                                                        -->
   <!-- ================================================================== -->
 
-  <xs:complexType name="EquipmentType">
-    <xs:annotation>
-      <xs:documentation>Équipement. Sans existence propre : il n'est déclaré qu'à l'intérieur d'une entité.
-        Ses variables sont de deux sortes : données technologiques et données d'initialisation.</xs:documentation>
-    </xs:annotation>
+  <xs:group name="EquipmentContent">
     <xs:sequence>
-      <xs:element name="TechnologicalData" type="x:TechnologicalDataType" minOccurs="0">
+      <xs:element name="Description" type="xs:string" minOccurs="0"/>
+      <xs:element name="TechnologicalData" type="x:DataItemsType" minOccurs="0">
         <xs:annotation><xs:documentation>Données technologiques : caractéristiques de l'équipement (ex. portée, bande de fréquences).</xs:documentation></xs:annotation>
       </xs:element>
-      <xs:element name="InitializationData" type="x:ParametersType" minOccurs="0">
+      <xs:element name="InitializationData" type="x:DataItemsType" minOccurs="0">
         <xs:annotation><xs:documentation>Données d'initialisation : état initial de l'équipement (ex. mode, fréquence active).</xs:documentation></xs:annotation>
       </xs:element>
       <xs:element name="Tasks" type="x:TasksType" minOccurs="0"/>
     </xs:sequence>
+  </xs:group>
+
+  <xs:complexType name="EquipmentDefinitionType">
+    <xs:annotation>
+      <xs:documentation>Définition d'équipement de la bibliothèque, réutilisable par plusieurs entités.</xs:documentation>
+    </xs:annotation>
+    <xs:group ref="x:EquipmentContent"/>
     <xs:attribute name="name" type="x:IdentifierType" use="required"/>
     <xs:attribute name="type" type="xs:string" use="required">
       <xs:annotation><xs:documentation>Nature de l'équipement (ex. Radar, Radio, Weapon).</xs:documentation></xs:annotation>
     </xs:attribute>
+  </xs:complexType>
+
+  <xs:element name="EquipmentLibrary">
+    <xs:annotation>
+      <xs:documentation>Bibliothèque d'équipements ; peut constituer un fichier à elle seule.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="EquipmentDefinition" type="x:EquipmentDefinitionType" minOccurs="0" maxOccurs="unbounded">
+          <xs:key name="TechnologicalDataKey">
+            <xs:selector xpath="x:TechnologicalData/x:Parameter"/>
+            <xs:field xpath="@name"/>
+          </xs:key>
+          <!-- Dans une définition, une borne par référence désigne une de ses données technologiques. -->
+          <xs:keyref name="ConstraintBoundRef" refer="x:TechnologicalDataKey">
+            <xs:selector xpath=".//x:Min|.//x:Max"/>
+            <xs:field xpath="@ref"/>
+          </xs:keyref>
+        </xs:element>
+      </xs:sequence>
+      <xs:attributeGroup ref="x:FileRootAttributes"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:complexType name="EquipmentType">
+    <xs:annotation>
+      <xs:documentation>Équipement d'une entité. Sans existence propre : il n'est déclaré qu'à l'intérieur d'une entité.
+        S'il référence une définition (@definition), son contenu complète ou surcharge celui de la définition
+        (fusion par nom de donnée, faite par l'outil) ; sinon il est entièrement décrit sur place et @type est attendu.</xs:documentation>
+    </xs:annotation>
+    <xs:group ref="x:EquipmentContent"/>
+    <xs:attribute name="name" type="x:IdentifierType" use="required"/>
+    <xs:attribute name="definition" type="x:IdentifierType" use="optional"/>
+    <xs:attribute name="type" type="xs:string" use="optional"/>
   </xs:complexType>
 
   <!-- ================================================================== -->
@@ -477,18 +598,25 @@
     <xs:attribute name="folder" type="xs:string" use="optional">
       <xs:annotation><xs:documentation>Classement dans la bibliothèque, segments séparés par '/' (ex. Platforms/Armored).</xs:documentation></xs:annotation>
     </xs:attribute>
+    <xs:attributeGroup ref="x:FileRootAttributes"/>
   </xs:complexType>
+
+  <xs:element name="Entity" type="x:EntityType">
+    <xs:annotation><xs:documentation>Entité ; peut constituer un fichier à elle seule.</xs:documentation></xs:annotation>
+    <!-- Nom d'équipement unique au sein de son entité. -->
+    <xs:unique name="EquipmentNameUnique">
+      <xs:selector xpath="x:Equipments/x:Equipment"/>
+      <xs:field xpath="@name"/>
+    </xs:unique>
+  </xs:element>
+
+  <xs:element name="Entities" type="x:EntitiesType"/>
 
   <xs:complexType name="EntitiesType">
     <xs:sequence>
-      <xs:element name="Entity" type="x:EntityType" maxOccurs="unbounded">
-        <!-- Nom d'équipement unique au sein de son entité. -->
-        <xs:unique name="EquipmentNameUnique">
-          <xs:selector xpath="x:Equipments/x:Equipment"/>
-          <xs:field xpath="@name"/>
-        </xs:unique>
-      </xs:element>
+      <xs:element ref="x:Entity" minOccurs="0" maxOccurs="unbounded"/>
     </xs:sequence>
+    <xs:attributeGroup ref="x:FileRootAttributes"/>
   </xs:complexType>
 
   <!-- ================================================================== -->
@@ -513,10 +641,13 @@
     <xs:attribute name="name" type="x:IdentifierType" use="required"/>
   </xs:complexType>
 
+  <xs:element name="Units" type="x:UnitsType"/>
+
   <xs:complexType name="UnitsType">
     <xs:sequence>
-      <xs:element name="Unit" type="x:UnitType" maxOccurs="unbounded"/>
+      <xs:element name="Unit" type="x:UnitType" minOccurs="0" maxOccurs="unbounded"/>
     </xs:sequence>
+    <xs:attributeGroup ref="x:FileRootAttributes"/>
   </xs:complexType>
 
 </xs:schema>
