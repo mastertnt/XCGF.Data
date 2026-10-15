@@ -295,10 +295,16 @@
 
   <xs:complexType name="EquipmentType">
     <xs:annotation>
-      <xs:documentation>Équipement. Sans existence propre : il n'est déclaré qu'à l'intérieur d'une entité.</xs:documentation>
+      <xs:documentation>Équipement. Sans existence propre : il n'est déclaré qu'à l'intérieur d'une entité.
+        Ses variables sont de deux sortes : données technologiques et données d'initialisation.</xs:documentation>
     </xs:annotation>
     <xs:sequence>
-      <xs:element name="Parameters" type="x:ParametersType" minOccurs="0"/>
+      <xs:element name="TechnologicalData" type="x:ParametersType" minOccurs="0">
+        <xs:annotation><xs:documentation>Données technologiques : caractéristiques de l'équipement (ex. portée, bande de fréquences).</xs:documentation></xs:annotation>
+      </xs:element>
+      <xs:element name="InitializationData" type="x:ParametersType" minOccurs="0">
+        <xs:annotation><xs:documentation>Données d'initialisation : état initial de l'équipement (ex. mode, fréquence active).</xs:documentation></xs:annotation>
+      </xs:element>
       <xs:element name="Tasks" type="x:TasksType" minOccurs="0"/>
     </xs:sequence>
     <xs:attribute name="name" type="x:IdentifierType" use="required"/>
