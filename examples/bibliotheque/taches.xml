@@ -7,17 +7,20 @@
 
   <TaskDefinition name="MoveTo">
     <Description>Se déplacer jusqu'à une destination.</Description>
+    <!-- Seule Destination est obligatoire (required="true") ; tous les autres paramètres sont
+         optionnels (required="false", valeur par défaut de l'attribut) et peuvent être omis
+         dans un TaskRef. Speed a une valeur par défaut (10 m/s). -->
     <Who>
-      <Parameter name="Escort" dataType="EntityReference"/>
+      <Parameter name="Escort" dataType="EntityReference" required="false"/>
     </Who>
     <What>
-      <Parameter name="Speed" dataType="SpeedMetersPerSecond">
+      <Parameter name="Speed" dataType="SpeedMetersPerSecond" required="false">
         <Value>10</Value>
         <Constraints>
           <Min value="0" inclusive="false"/>
         </Constraints>
       </Parameter>
-      <Parameter name="Formation" dataType="HLAASCIIstring">
+      <Parameter name="Formation" dataType="HLAASCIIstring" required="false">
         <Constraints>
           <ListOfValues>
             <Value>Column</Value>
@@ -28,14 +31,14 @@
       </Parameter>
     </What>
     <When>
-      <Parameter name="MaxDuration" dataType="DurationSeconds"/>
+      <Parameter name="MaxDuration" dataType="DurationSeconds" required="false"/>
     </When>
     <Where>
       <Parameter name="Destination" dataType="WaypointStruct" required="true"/>
-      <Parameter name="Route" dataType="WaypointList"/>
+      <Parameter name="Route" dataType="WaypointList" required="false"/>
     </Where>
     <Why>
-      <Parameter name="Intent" dataType="HLAASCIIstring"/>
+      <Parameter name="Intent" dataType="HLAASCIIstring" required="false"/>
     </Why>
     <ActivationTrigger>
       <OnEvent event="OrderReceived"/>
