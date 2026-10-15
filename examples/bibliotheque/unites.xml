@@ -2,6 +2,7 @@
 <Units xmlns="urn:xcgf:data:1.0">
   <Unit name="Groupement_A">
     <EntityRef entity="Tigre_01"/>
+    <EntityRef entity="Rafale_01"/>
     <Unit name="Patrouille_1">
       <EntityRef entity="VBL_01"/>
       <EntityRef entity="VBL_02"/>

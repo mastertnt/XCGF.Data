@@ -2,6 +2,68 @@
 <!-- Bibliothèque d'équipements : définitions réutilisées par les entités. -->
 <EquipmentLibrary xmlns="urn:xcgf:data:1.0">
 
+  <!-- Cinématiques ======================================================= -->
+
+  <!-- Cinématique de base : position et orientation, portées par chaque entité. -->
+  <KinematicDefinition name="Kinematic">
+    <Description>Cinématique de base : position et orientation.</Description>
+  </KinematicDefinition>
+
+  <KinematicDefinition name="GroundKinematic" base="Kinematic">
+    <TechnologicalData>
+      <Parameter name="MinSpeed" dataType="SpeedMetersPerSecond"><Value>-5</Value></Parameter>
+      <Parameter name="MaxSpeed" dataType="SpeedMetersPerSecond"><Value>27.7</Value></Parameter>
+    </TechnologicalData>
+    <InitializationData>
+      <!-- Vitesse initiale : Min sur MinSpeed, Max sur MaxSpeed. -->
+      <Parameter name="InitialSpeed" dataType="SpeedMetersPerSecond">
+        <Value>0</Value>
+        <Constraints>
+          <Min ref="MinSpeed"/>
+          <Max ref="MaxSpeed"/>
+          <!-- Contrainte libre, interprétée par l'outil. -->
+          <CustomConstraint kind="Step">
+            <Argument name="step" value="0.5"/>
+          </CustomConstraint>
+        </Constraints>
+      </Parameter>
+    </InitializationData>
+  </KinematicDefinition>
+
+  <KinematicDefinition name="FixedWingKinematic" base="Kinematic">
+    <TechnologicalData>
+      <Parameter name="StallSpeed" dataType="SpeedMetersPerSecond"><Value>60</Value></Parameter>
+      <Parameter name="MaxSpeed" dataType="SpeedMetersPerSecond"><Value>600</Value></Parameter>
+      <Parameter name="Ceiling" dataType="RangeMeters"><Value>15000</Value></Parameter>
+    </TechnologicalData>
+    <InitializationData>
+      <Parameter name="InitialSpeed" dataType="SpeedMetersPerSecond">
+        <Value>200</Value>
+        <Constraints>
+          <Min ref="StallSpeed"/>
+          <Max ref="MaxSpeed"/>
+        </Constraints>
+      </Parameter>
+    </InitializationData>
+  </KinematicDefinition>
+
+  <KinematicDefinition name="RotaryWingKinematic" base="Kinematic">
+    <TechnologicalData>
+      <Parameter name="MaxSpeed" dataType="SpeedMetersPerSecond"><Value>80</Value></Parameter>
+    </TechnologicalData>
+    <InitializationData>
+      <Parameter name="InitialSpeed" dataType="SpeedMetersPerSecond">
+        <Value>0</Value>
+        <Constraints>
+          <Min value="0"/>
+          <Max ref="MaxSpeed"/>
+        </Constraints>
+      </Parameter>
+    </InitializationData>
+  </KinematicDefinition>
+
+  <!-- Autres équipements ================================================= -->
+
   <EquipmentDefinition name="PR4G" type="Radio">
     <Description>Poste radio VHF.</Description>
     <TechnologicalData>
@@ -34,25 +96,11 @@
     </Tasks>
   </EquipmentDefinition>
 
-  <EquipmentDefinition name="Moteur_VBL" type="Propulsion">
+  <!-- Dérivée de PR4G : hérite de tout et surcharge la portée. -->
+  <EquipmentDefinition name="PR4G_Vehicule" base="PR4G">
     <TechnologicalData>
-      <Parameter name="MinSpeed" dataType="SpeedMetersPerSecond"><Value>-5</Value></Parameter>
-      <Parameter name="MaxSpeed" dataType="SpeedMetersPerSecond"><Value>27.7</Value></Parameter>
+      <Parameter name="MaxRange" dataType="RangeMeters"><Value>12000</Value></Parameter>
     </TechnologicalData>
-    <InitializationData>
-      <!-- Vitesse initiale : Min sur MinSpeed, Max sur MaxSpeed. -->
-      <Parameter name="InitialSpeed" dataType="SpeedMetersPerSecond">
-        <Value>0</Value>
-        <Constraints>
-          <Min ref="MinSpeed"/>
-          <Max ref="MaxSpeed"/>
-          <!-- Contrainte libre, interprétée par l'outil. -->
-          <CustomConstraint kind="Step">
-            <Argument name="step" value="0.5"/>
-          </CustomConstraint>
-        </Constraints>
-      </Parameter>
-    </InitializationData>
   </EquipmentDefinition>
 
   <EquipmentDefinition name="RDR_Tigre" type="Radar">

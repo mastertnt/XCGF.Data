@@ -15,6 +15,7 @@
     <xi:include href="entites/VBL_01.xml"/>
     <xi:include href="entites/VBL_02.xml"/>
     <xi:include href="entites/Tigre_01.xml"/>
+    <xi:include href="entites/Rafale_01.xml"/>
   </Entities>
   <xi:include href="unites.xml"/>
 </XcgfData>

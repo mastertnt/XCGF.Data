@@ -5,7 +5,8 @@
   Le document décrit :
     - des types de données, sur le modèle de l'OMT HLA (IEEE 1516-2010) ;
     - une bibliothèque d'équipements (définitions réutilisables) ;
-    - des entités (position, orientation, type DIS, nom unique), conteneurs d'équipements.
+    - des entités (type DIS, nom unique), conteneurs d'équipements, avec un équipement cinématique
+      obligatoire qui porte position et orientation ; les définitions peuvent dériver les unes des autres.
       Un équipement d'entité n'existe qu'à l'intérieur de celle-ci ; il peut s'appuyer
       sur une définition de la bibliothèque ;
     - des unités, groupes d'entités (et éventuellement de sous-unités) ;
@@ -84,10 +85,37 @@
     </xs:keyref>
 
     <!-- Nom de définition d'équipement unique dans la bibliothèque. -->
+    <xs:unique name="EquipmentLibraryNameUnique">
+      <xs:selector xpath="x:EquipmentLibrary/x:EquipmentDefinition|x:EquipmentLibrary/x:KinematicDefinition"/>
+      <xs:field xpath="@name"/>
+    </xs:unique>
+
     <xs:key name="EquipmentDefinitionKey">
       <xs:selector xpath="x:EquipmentLibrary/x:EquipmentDefinition"/>
       <xs:field xpath="@name"/>
     </xs:key>
+
+    <xs:key name="KinematicDefinitionKey">
+      <xs:selector xpath="x:EquipmentLibrary/x:KinematicDefinition"/>
+      <xs:field xpath="@name"/>
+    </xs:key>
+
+    <!-- Une définition ne dérive que d'une définition de même nature. -->
+    <xs:keyref name="EquipmentDefinitionBaseRef" refer="x:EquipmentDefinitionKey">
+      <xs:selector xpath="x:EquipmentLibrary/x:EquipmentDefinition"/>
+      <xs:field xpath="@base"/>
+    </xs:keyref>
+
+    <xs:keyref name="KinematicDefinitionBaseRef" refer="x:KinematicDefinitionKey">
+      <xs:selector xpath="x:EquipmentLibrary/x:KinematicDefinition"/>
+      <xs:field xpath="@base"/>
+    </xs:keyref>
+
+    <!-- La cinématique d'une entité s'appuie sur une définition cinématique. -->
+    <xs:keyref name="KinematicDefinitionRef" refer="x:KinematicDefinitionKey">
+      <xs:selector xpath="x:Entities/x:Entity/x:Kinematic"/>
+      <xs:field xpath="@definition"/>
+    </xs:keyref>
 
     <!-- Un équipement d'entité ne peut s'appuyer que sur une définition existante. -->
     <xs:keyref name="EquipmentDefinitionRef" refer="x:EquipmentDefinitionKey">
@@ -651,15 +679,40 @@
     </xs:sequence>
   </xs:group>
 
+  <xs:complexType name="DefinitionBaseType" abstract="true">
+    <xs:annotation>
+      <xs:documentation>Base des définitions de la bibliothèque. Une définition peut dériver d'une autre (@base) :
+        elle hérite de toutes ses données et tâches, en ajoute et peut surcharger leurs valeurs ou
+        contraintes (fusion par nom, faite par l'outil, qui détecte aussi les cycles).</xs:documentation>
+    </xs:annotation>
+    <xs:group ref="x:EquipmentContent"/>
+    <xs:attribute name="name" type="x:IdentifierType" use="required"/>
+    <xs:attribute name="base" type="x:IdentifierType" use="optional"/>
+  </xs:complexType>
+
   <xs:complexType name="EquipmentDefinitionType">
     <xs:annotation>
       <xs:documentation>Définition d'équipement de la bibliothèque, réutilisable par plusieurs entités.</xs:documentation>
     </xs:annotation>
-    <xs:group ref="x:EquipmentContent"/>
-    <xs:attribute name="name" type="x:IdentifierType" use="required"/>
-    <xs:attribute name="type" type="xs:string" use="required">
-      <xs:annotation><xs:documentation>Nature de l'équipement (ex. Radar, Radio, Weapon).</xs:documentation></xs:annotation>
-    </xs:attribute>
+    <xs:complexContent>
+      <xs:extension base="x:DefinitionBaseType">
+        <xs:attribute name="type" type="xs:string" use="optional">
+          <xs:annotation><xs:documentation>Nature de l'équipement (ex. Radar, Radio, Weapon) ; hérité de @base si absent.</xs:documentation></xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="KinematicDefinitionType">
+    <xs:annotation>
+      <xs:documentation>Définition d'équipement cinématique. Toute cinématique fournit au minimum, en données
+        d'initialisation, une position et une orientation (portées par l'élément Kinematic de l'entité).
+        Les dérivées (ex. FixedWingKinematic, base="Kinematic") ajoutent des données technologiques
+        et d'initialisation.</xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="x:DefinitionBaseType"/>
+    </xs:complexContent>
   </xs:complexType>
 
   <xs:element name="EquipmentLibrary">
@@ -667,19 +720,10 @@
       <xs:documentation>Bibliothèque d'équipements ; peut constituer un fichier à elle seule.</xs:documentation>
     </xs:annotation>
     <xs:complexType>
-      <xs:sequence>
-        <xs:element name="EquipmentDefinition" type="x:EquipmentDefinitionType" minOccurs="0" maxOccurs="unbounded">
-          <xs:key name="TechnologicalDataKey">
-            <xs:selector xpath="x:TechnologicalData/x:Parameter"/>
-            <xs:field xpath="@name"/>
-          </xs:key>
-          <!-- Dans une définition, une borne par référence désigne une de ses données technologiques. -->
-          <xs:keyref name="ConstraintBoundRef" refer="x:TechnologicalDataKey">
-            <xs:selector xpath=".//x:Min|.//x:Max"/>
-            <xs:field xpath="@ref"/>
-          </xs:keyref>
-        </xs:element>
-      </xs:sequence>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element name="EquipmentDefinition" type="x:EquipmentDefinitionType"/>
+        <xs:element name="KinematicDefinition" type="x:KinematicDefinitionType"/>
+      </xs:choice>
       <xs:attributeGroup ref="x:FileRootAttributes"/>
     </xs:complexType>
   </xs:element>
@@ -694,6 +738,32 @@
     <xs:attribute name="name" type="x:IdentifierType" use="required"/>
     <xs:attribute name="definition" type="x:IdentifierType" use="optional"/>
     <xs:attribute name="type" type="xs:string" use="optional"/>
+  </xs:complexType>
+
+  <xs:complexType name="KinematicInitializationDataType">
+    <xs:annotation>
+      <xs:documentation>Données d'initialisation d'une cinématique : position et orientation obligatoires,
+        puis les données propres à la définition (ex. InitialSpeed).</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="Position" type="x:PositionType"/>
+      <xs:element name="Orientation" type="x:OrientationType"/>
+      <xs:element name="Parameter" type="x:DataItemType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="KinematicType">
+    <xs:annotation>
+      <xs:documentation>Équipement cinématique d'une entité (obligatoire, un seul). Il s'appuie sur une
+        définition cinématique de la bibliothèque et porte au minimum position et orientation.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="Description" type="xs:string" minOccurs="0"/>
+      <xs:element name="TechnologicalData" type="x:DataItemsType" minOccurs="0"/>
+      <xs:element name="InitializationData" type="x:KinematicInitializationDataType"/>
+      <xs:element name="Tasks" type="x:TasksType" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="definition" type="x:IdentifierType" use="required"/>
   </xs:complexType>
 
   <!-- ================================================================== -->
@@ -780,12 +850,12 @@
 
   <xs:complexType name="EntityType">
     <xs:annotation>
-      <xs:documentation>Entité : conteneur d'équipements, positionnée et orientée, identifiée par un nom unique.</xs:documentation>
+      <xs:documentation>Entité : conteneur d'équipements, identifiée par un nom unique. Sa position et son
+        orientation sont les données d'initialisation de son équipement cinématique, obligatoire.</xs:documentation>
     </xs:annotation>
     <xs:sequence>
       <xs:element name="Description" type="xs:string" minOccurs="0"/>
-      <xs:element name="Position" type="x:PositionType"/>
-      <xs:element name="Orientation" type="x:OrientationType"/>
+      <xs:element name="Kinematic" type="x:KinematicType"/>
       <xs:element name="Parameters" type="x:ParametersType" minOccurs="0"/>
       <xs:element name="Equipments" minOccurs="0">
         <xs:complexType>
