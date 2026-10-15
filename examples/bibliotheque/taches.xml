@@ -10,10 +10,14 @@
     <!-- Seule Destination est obligatoire (required="true") ; tous les autres paramètres sont
          optionnels (required="false", valeur par défaut de l'attribut) et peuvent être omis
          dans un TaskRef. Speed a une valeur par défaut (10 m/s). -->
-    <Who>
-      <Parameter name="Escort" dataType="EntityReference" required="false"/>
-    </Who>
+    <WhoTasker>
+      <Parameter name="Commander" dataType="EntityReference" required="false"/>
+    </WhoTasker>
+    <WhoTaskee>
+      <Parameter name="Executor" dataType="EntityReference" required="false"/>
+    </WhoTaskee>
     <What>
+      <Parameter name="Escort" dataType="EntityReference" required="false"/>
       <Parameter name="Speed" dataType="SpeedMetersPerSecond" required="false">
         <Value>10</Value>
         <Constraints>
@@ -74,11 +78,11 @@
   </TaskDefinition>
 
   <TaskDefinition name="Reconnaissance">
-    <Who>
+    <WhoTarget>
       <Parameter name="Target" dataType="EntityReference"/>
-    </Who>
+    </WhoTarget>
     <What>
-      <!-- Who ne contient que des entités : unité et équipement vont dans What. -->
+      <!-- Les Who ne contiennent que des entités : unité et équipement vont dans What. -->
       <Parameter name="ReportTo" dataType="UnitReference"/>
       <Parameter name="Sensor" dataType="EquipmentReference"/>
     </What>
