@@ -30,7 +30,7 @@
       </Parameter>
     </InitializationData>
     <Tasks>
-      <Task name="Emettre" type="Transmit" duration="PT5M"/>
+      <TaskRef task="Transmit"/>
     </Tasks>
   </EquipmentDefinition>
 
@@ -78,7 +78,7 @@
       </Parameter>
     </InitializationData>
     <Tasks>
-      <Task name="Surveiller" type="Detect"/>
+      <TaskRef task="Detect"/>
     </Tasks>
   </EquipmentDefinition>
 

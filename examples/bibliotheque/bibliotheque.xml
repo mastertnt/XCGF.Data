@@ -10,6 +10,7 @@
           version="1.0">
   <xi:include href="types.xml"/>
   <xi:include href="equipements.xml"/>
+  <xi:include href="taches.xml"/>
   <Entities>
     <xi:include href="entites/VBL_01.xml"/>
     <xi:include href="entites/VBL_02.xml"/>

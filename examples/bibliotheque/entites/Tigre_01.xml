@@ -12,4 +12,7 @@
       </TechnologicalData>
     </Equipment>
   </Equipments>
+  <Tasks>
+    <TaskRef task="MoveTo"/>
+  </Tasks>
 </Entity>

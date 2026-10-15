@@ -19,11 +19,9 @@
     </Equipment>
   </Equipments>
   <Tasks>
-    <Task name="Rejoindre_PC" type="Move" start="2026-10-15T08:00:00Z" priority="1">
-      <Description>Rejoindre le poste de commandement.</Description>
-      <Parameters>
-        <Parameter name="Speed" dataType="SpeedMetersPerSecond">15</Parameter>
-      </Parameters>
-    </Task>
+    <!-- MoveTo avec une vitesse propre à ce véhicule. -->
+    <TaskRef task="MoveTo">
+      <Parameter name="Speed" dataType="SpeedMetersPerSecond"><Value>15</Value></Parameter>
+    </TaskRef>
   </Tasks>
 </Entity>
