@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Exemple de document XCGF : une patrouille de deux véhicules et un hélicoptère. -->
+<XcgfData xmlns="urn:xcgf:data:1.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="urn:xcgf:data:1.0 ../schemas/xcgf-data.xsd"
+          version="1.0">
+
+  <DataTypes>
+    <BasicData name="HLAinteger32BE" size="32" interpretation="Entier signé" endian="Big" encoding="Complément à deux, 32 bits"/>
+    <BasicData name="HLAfloat64BE" size="64" interpretation="Réel double précision" endian="Big" encoding="IEEE 754"/>
+    <BasicData name="HLAoctet" size="8" interpretation="Octet" endian="Big" encoding="8 bits"/>
+
+    <SimpleData name="FrequencyHz" representation="HLAfloat64BE" units="Hz" resolution="1" accuracy="1">
+      <Semantics>Fréquence radio.</Semantics>
+    </SimpleData>
+    <SimpleData name="RangeMeters" representation="HLAfloat64BE" units="m" resolution="0.1" accuracy="1"/>
+    <SimpleData name="SpeedMetersPerSecond" representation="HLAfloat64BE" units="m/s" resolution="0.01" accuracy="0.1"/>
+
+    <EnumeratedData name="RadarModeEnum" representation="HLAinteger32BE">
+      <Enumerator name="Off" value="0"/>
+      <Enumerator name="Search" value="1"/>
+      <Enumerator name="Track" value="2"/>
+    </EnumeratedData>
+
+    <ArrayData name="FrequencyList" dataType="FrequencyHz" cardinality="Dynamic" encoding="HLAvariableArray"/>
+
+    <FixedRecordData name="WaypointStruct">
+      <Field name="Latitude" dataType="HLAfloat64BE"/>
+      <Field name="Longitude" dataType="HLAfloat64BE"/>
+      <Field name="Altitude" dataType="RangeMeters"/>
+    </FixedRecordData>
+
+    <ArrayData name="WaypointList" dataType="WaypointStruct" cardinality="1..64" encoding="HLAvariableArray"/>
+
+    <VariantRecordData name="RadarSettings" discriminant="Mode" dataType="RadarModeEnum">
+      <Alternative enumerator="Search" name="SearchRange" dataType="RangeMeters"/>
+      <Alternative enumerator="Track" name="TrackId" dataType="HLAinteger32BE"/>
+    </VariantRecordData>
+  </DataTypes>
+
+  <Entities>
+    <Entity name="VBL_01">
+      <!-- 1.1.71.2.x : plateforme terrestre, France, véhicule blindé léger. -->
+      <DisType kind="1" domain="1" country="71" category="2" subcategory="1"/>
+      <Position latitude="48.7125" longitude="2.2010" altitude="160"/>
+      <Orientation heading="90" pitch="0" roll="0"/>
+      <Parameters>
+        <Parameter name="MaxSpeed" dataType="SpeedMetersPerSecond">27.7</Parameter>
+      </Parameters>
+      <Equipments>
+        <Equipment name="Radio" type="Radio">
+          <Parameters>
+            <Parameter name="Frequencies" dataType="FrequencyList">30000000 30025000</Parameter>
+          </Parameters>
+          <Tasks>
+            <Task name="Emettre" type="Transmit" duration="PT5M"/>
+          </Tasks>
+        </Equipment>
+      </Equipments>
+      <Tasks>
+        <Task name="Rejoindre_PC" type="Move" start="2026-10-15T08:00:00Z" priority="1">
+          <Description>Rejoindre le poste de commandement.</Description>
+          <Parameters>
+            <Parameter name="Speed" dataType="SpeedMetersPerSecond">15</Parameter>
+          </Parameters>
+        </Task>
+      </Tasks>
+    </Entity>
+
+    <Entity name="VBL_02">
+      <DisType kind="1" domain="1" country="71" category="2" subcategory="1"/>
+      <Position latitude="48.7130" longitude="2.2025" altitude="161"/>
+      <Orientation heading="92.5" pitch="1.5" roll="-0.5"/>
+      <Equipments>
+        <Equipment name="Radio" type="Radio"/>
+      </Equipments>
+    </Entity>
+
+    <Entity name="Tigre_01">
+      <!-- 1.2.71.20 : plateforme aérienne, France, hélicoptère d'attaque. -->
+      <DisType kind="1" domain="2" country="71" category="20" subcategory="1"/>
+      <Position latitude="48.7300" longitude="2.1900" altitude="450"/>
+      <Orientation heading="270" pitch="-2" roll="0"/>
+      <Equipments>
+        <Equipment name="Radar" type="Radar">
+          <Parameters>
+            <Parameter name="Mode" dataType="RadarModeEnum">Search</Parameter>
+            <Parameter name="Settings" dataType="RadarSettings">Search:8000</Parameter>
+          </Parameters>
+          <Tasks>
+            <Task name="Surveiller" type="Detect"/>
+          </Tasks>
+        </Equipment>
+        <Equipment name="Radio" type="Radio"/>
+      </Equipments>
+    </Entity>
+  </Entities>
+
+  <Units>
+    <Unit name="Groupement_A">
+      <EntityRef entity="Tigre_01"/>
+      <Unit name="Patrouille_1">
+        <EntityRef entity="VBL_01"/>
+        <EntityRef entity="VBL_02"/>
+        <Tasks>
+          <Task name="Patrouiller" type="Patrol" duration="PT2H">
+            <Parameters>
+              <Parameter name="Route" dataType="WaypointList">48.71,2.20,160 48.72,2.21,165 48.73,2.20,170</Parameter>
+            </Parameters>
+          </Task>
+        </Tasks>
+      </Unit>
+      <Tasks>
+        <Task name="Reconnaitre_zone" type="Reconnaissance" start="2026-10-15T09:00:00Z"/>
+      </Tasks>
+    </Unit>
+  </Units>
+
+</XcgfData>

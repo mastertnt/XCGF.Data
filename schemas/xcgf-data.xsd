@@ -1,0 +1,441 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  XCGF.Data : schéma de description des données XCGF.
+
+  Le document décrit :
+    - des types de données, sur le modèle de l'OMT HLA (IEEE 1516-2010) ;
+    - des entités (position, orientation, type DIS, nom unique), conteneurs d'équipements ;
+    - des équipements, qui n'existent qu'à l'intérieur d'une entité ;
+    - des unités, groupes d'entités (et éventuellement de sous-unités) ;
+    - des tâches, rattachables aux équipements, aux entités et aux unités.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:x="urn:xcgf:data:1.0"
+           targetNamespace="urn:xcgf:data:1.0"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified"
+           version="1.0">
+
+  <!-- ================================================================== -->
+  <!-- Racine                                                             -->
+  <!-- ================================================================== -->
+
+  <xs:element name="XcgfData">
+    <xs:annotation>
+      <xs:documentation>Racine d'un document XCGF : types de données, entités et unités.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="DataTypes" type="x:DataTypesType" minOccurs="0"/>
+        <xs:element name="Entities" type="x:EntitiesType" minOccurs="0"/>
+        <xs:element name="Units" type="x:UnitsType" minOccurs="0"/>
+      </xs:sequence>
+      <xs:attribute name="version" type="xs:string" use="optional"/>
+    </xs:complexType>
+
+    <!-- Noms de types de données : uniques toutes catégories confondues. -->
+    <xs:key name="DataTypeKey">
+      <xs:selector xpath="x:DataTypes/x:BasicData|x:DataTypes/x:SimpleData|x:DataTypes/x:EnumeratedData|x:DataTypes/x:ArrayData|x:DataTypes/x:FixedRecordData|x:DataTypes/x:VariantRecordData"/>
+      <xs:field xpath="@name"/>
+    </xs:key>
+
+    <!-- Représentations de base (cibles de @representation). -->
+    <xs:key name="BasicDataKey">
+      <xs:selector xpath="x:DataTypes/x:BasicData"/>
+      <xs:field xpath="@name"/>
+    </xs:key>
+
+    <!-- Types énumérés (cibles du discriminant d'un enregistrement variant). -->
+    <xs:key name="EnumeratedDataKey">
+      <xs:selector xpath="x:DataTypes/x:EnumeratedData"/>
+      <xs:field xpath="@name"/>
+    </xs:key>
+
+    <!-- Toute référence @dataType doit désigner un type déclaré. -->
+    <xs:keyref name="DataTypeRef" refer="x:DataTypeKey">
+      <xs:selector xpath="x:DataTypes/x:ArrayData|.//x:Field|.//x:Alternative|.//x:Parameter"/>
+      <xs:field xpath="@dataType"/>
+    </xs:keyref>
+
+    <xs:keyref name="RepresentationRef" refer="x:BasicDataKey">
+      <xs:selector xpath="x:DataTypes/x:SimpleData|x:DataTypes/x:EnumeratedData"/>
+      <xs:field xpath="@representation"/>
+    </xs:keyref>
+
+    <xs:keyref name="DiscriminantTypeRef" refer="x:EnumeratedDataKey">
+      <xs:selector xpath="x:DataTypes/x:VariantRecordData"/>
+      <xs:field xpath="@dataType"/>
+    </xs:keyref>
+
+    <!-- Nom d'entité unique parmi l'ensemble des entités du document. -->
+    <xs:key name="EntityNameKey">
+      <xs:selector xpath="x:Entities/x:Entity"/>
+      <xs:field xpath="@name"/>
+    </xs:key>
+
+    <!-- Nom d'unité unique parmi toutes les unités, sous-unités comprises. -->
+    <xs:key name="UnitNameKey">
+      <xs:selector xpath=".//x:Unit"/>
+      <xs:field xpath="@name"/>
+    </xs:key>
+
+    <!-- Une unité ne peut référencer qu'une entité existante. -->
+    <xs:keyref name="UnitEntityRef" refer="x:EntityNameKey">
+      <xs:selector xpath=".//x:EntityRef"/>
+      <xs:field xpath="@entity"/>
+    </xs:keyref>
+  </xs:element>
+
+  <!-- ================================================================== -->
+  <!-- Types simples communs                                              -->
+  <!-- ================================================================== -->
+
+  <xs:simpleType name="IdentifierType">
+    <xs:annotation>
+      <xs:documentation>Identifiant : lettre ou '_' puis lettres, chiffres, '_', '-' ou '.'.</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[A-Za-z_][A-Za-z0-9_.\-]*"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="EndianType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Big"/>
+      <xs:enumeration value="Little"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="CardinalityType">
+    <xs:annotation>
+      <xs:documentation>Cardinalité HLA : entier, plage "min..max" ou "Dynamic".</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:pattern value="Dynamic|[0-9]+|[0-9]+\.\.[0-9]+"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- ================================================================== -->
+  <!-- Types de données (OMT HLA 1516-2010)                               -->
+  <!-- ================================================================== -->
+
+  <xs:complexType name="DataTypesType">
+    <xs:annotation>
+      <xs:documentation>Déclarations de types, dans un ordre quelconque.</xs:documentation>
+    </xs:annotation>
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="BasicData" type="x:BasicDataType"/>
+      <xs:element name="SimpleData" type="x:SimpleDataType"/>
+      <xs:element name="EnumeratedData" type="x:EnumeratedDataType"/>
+      <xs:element name="ArrayData" type="x:ArrayDataType"/>
+      <xs:element name="FixedRecordData" type="x:FixedRecordDataType"/>
+      <xs:element name="VariantRecordData" type="x:VariantRecordDataType"/>
+    </xs:choice>
+  </xs:complexType>
+
+  <xs:complexType name="DataTypeBase" abstract="true">
+    <xs:sequence>
+      <xs:element name="Semantics" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="name" type="x:IdentifierType" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="BasicDataType">
+    <xs:annotation>
+      <xs:documentation>Représentation binaire de base (ex. HLAinteger32BE, HLAfloat64LE).</xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="x:DataTypeBase">
+        <xs:attribute name="size" type="xs:positiveInteger" use="required">
+          <xs:annotation><xs:documentation>Taille en bits.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="interpretation" type="xs:string" use="optional"/>
+        <xs:attribute name="endian" type="x:EndianType" use="required"/>
+        <xs:attribute name="encoding" type="xs:string" use="optional"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="SimpleDataType">
+    <xs:annotation>
+      <xs:documentation>Type scalaire défini sur une représentation de base, avec unité et précision.</xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="x:DataTypeBase">
+        <xs:attribute name="representation" type="x:IdentifierType" use="required"/>
+        <xs:attribute name="units" type="xs:string" use="optional"/>
+        <xs:attribute name="resolution" type="xs:string" use="optional"/>
+        <xs:attribute name="accuracy" type="xs:string" use="optional"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="EnumeratedDataType">
+    <xs:complexContent>
+      <xs:extension base="x:DataTypeBase">
+        <xs:sequence>
+          <xs:element name="Enumerator" maxOccurs="unbounded">
+            <xs:complexType>
+              <xs:attribute name="name" type="x:IdentifierType" use="required"/>
+              <xs:attribute name="value" type="xs:long" use="required"/>
+            </xs:complexType>
+          </xs:element>
+        </xs:sequence>
+        <xs:attribute name="representation" type="x:IdentifierType" use="required"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="ArrayDataType">
+    <xs:complexContent>
+      <xs:extension base="x:DataTypeBase">
+        <xs:attribute name="dataType" type="x:IdentifierType" use="required">
+          <xs:annotation><xs:documentation>Type des éléments.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="cardinality" type="x:CardinalityType" use="required"/>
+        <xs:attribute name="encoding" type="xs:string" use="required">
+          <xs:annotation><xs:documentation>Ex. HLAfixedArray, HLAvariableArray.</xs:documentation></xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="FieldType">
+    <xs:sequence>
+      <xs:element name="Semantics" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="name" type="x:IdentifierType" use="required"/>
+    <xs:attribute name="dataType" type="x:IdentifierType" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="FixedRecordDataType">
+    <xs:complexContent>
+      <xs:extension base="x:DataTypeBase">
+        <xs:sequence>
+          <xs:element name="Field" type="x:FieldType" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="encoding" type="xs:string" use="optional" default="HLAfixedRecord"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="VariantRecordDataType">
+    <xs:complexContent>
+      <xs:extension base="x:DataTypeBase">
+        <xs:sequence>
+          <xs:element name="Alternative" maxOccurs="unbounded">
+            <xs:complexType>
+              <xs:complexContent>
+                <xs:extension base="x:FieldType">
+                  <xs:attribute name="enumerator" type="xs:string" use="required">
+                    <xs:annotation><xs:documentation>Valeur(s) du discriminant sélectionnant cette alternative (liste séparée par des virgules, ou HLAother).</xs:documentation></xs:annotation>
+                  </xs:attribute>
+                </xs:extension>
+              </xs:complexContent>
+            </xs:complexType>
+          </xs:element>
+        </xs:sequence>
+        <xs:attribute name="discriminant" type="x:IdentifierType" use="required"/>
+        <xs:attribute name="dataType" type="x:IdentifierType" use="required">
+          <xs:annotation><xs:documentation>Type énuméré du discriminant.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="encoding" type="xs:string" use="optional" default="HLAvariantRecord"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <!-- ================================================================== -->
+  <!-- Paramètres et tâches                                               -->
+  <!-- ================================================================== -->
+
+  <xs:complexType name="ParameterType">
+    <xs:annotation>
+      <xs:documentation>Valeur nommée, typée par un type de données déclaré. La valeur est portée en texte.</xs:documentation>
+    </xs:annotation>
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute name="name" type="x:IdentifierType" use="required"/>
+        <xs:attribute name="dataType" type="x:IdentifierType" use="required"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+
+  <xs:complexType name="ParametersType">
+    <xs:sequence>
+      <xs:element name="Parameter" type="x:ParameterType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="TaskType">
+    <xs:annotation>
+      <xs:documentation>Tâche générique, rattachable à un équipement, une entité ou une unité.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="Description" type="xs:string" minOccurs="0"/>
+      <xs:element name="Parameters" type="x:ParametersType" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="name" type="x:IdentifierType" use="required"/>
+    <xs:attribute name="type" type="xs:string" use="required">
+      <xs:annotation><xs:documentation>Nature de la tâche (ex. Move, Patrol, Detect).</xs:documentation></xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="start" type="xs:dateTime" use="optional"/>
+    <xs:attribute name="duration" type="xs:duration" use="optional"/>
+    <xs:attribute name="priority" type="xs:nonNegativeInteger" use="optional"/>
+  </xs:complexType>
+
+  <xs:complexType name="TasksType">
+    <xs:sequence>
+      <xs:element name="Task" type="x:TaskType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- ================================================================== -->
+  <!-- Équipements                                                        -->
+  <!-- ================================================================== -->
+
+  <xs:complexType name="EquipmentType">
+    <xs:annotation>
+      <xs:documentation>Équipement. Sans existence propre : il n'est déclaré qu'à l'intérieur d'une entité.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="Parameters" type="x:ParametersType" minOccurs="0"/>
+      <xs:element name="Tasks" type="x:TasksType" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="name" type="x:IdentifierType" use="required"/>
+    <xs:attribute name="type" type="xs:string" use="required">
+      <xs:annotation><xs:documentation>Nature de l'équipement (ex. Radar, Radio, Weapon).</xs:documentation></xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <!-- ================================================================== -->
+  <!-- Entités                                                            -->
+  <!-- ================================================================== -->
+
+  <xs:simpleType name="LatitudeType">
+    <xs:restriction base="xs:double">
+      <xs:minInclusive value="-90"/>
+      <xs:maxInclusive value="90"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="LongitudeType">
+    <xs:restriction base="xs:double">
+      <xs:minInclusive value="-180"/>
+      <xs:maxInclusive value="180"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="PositionType">
+    <xs:annotation>
+      <xs:documentation>Position géodésique WGS84 : latitude et longitude en degrés décimaux, altitude en mètres.</xs:documentation>
+    </xs:annotation>
+    <xs:attribute name="latitude" type="x:LatitudeType" use="required"/>
+    <xs:attribute name="longitude" type="x:LongitudeType" use="required"/>
+    <xs:attribute name="altitude" type="xs:double" use="required"/>
+  </xs:complexType>
+
+  <xs:simpleType name="HeadingType">
+    <xs:restriction base="xs:double">
+      <xs:minInclusive value="0"/>
+      <xs:maxExclusive value="360"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="PitchType">
+    <xs:restriction base="xs:double">
+      <xs:minInclusive value="-90"/>
+      <xs:maxInclusive value="90"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="RollType">
+    <xs:restriction base="xs:double">
+      <xs:minInclusive value="-180"/>
+      <xs:maxInclusive value="180"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="OrientationType">
+    <xs:annotation>
+      <xs:documentation>Orientation en degrés : cap [0, 360[, tangage [-90, 90], roulis [-180, 180].</xs:documentation>
+    </xs:annotation>
+    <xs:attribute name="heading" type="x:HeadingType" use="required"/>
+    <xs:attribute name="pitch" type="x:PitchType" use="required"/>
+    <xs:attribute name="roll" type="x:RollType" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="DisEntityTypeType">
+    <xs:annotation>
+      <xs:documentation>Type d'entité DIS (IEEE 1278.1, Entity Type Record) : kind.domain.country.category.subcategory.specific.extra.</xs:documentation>
+    </xs:annotation>
+    <xs:attribute name="kind" type="xs:unsignedByte" use="required"/>
+    <xs:attribute name="domain" type="xs:unsignedByte" use="required"/>
+    <xs:attribute name="country" type="xs:unsignedShort" use="required"/>
+    <xs:attribute name="category" type="xs:unsignedByte" use="required"/>
+    <xs:attribute name="subcategory" type="xs:unsignedByte" use="optional" default="0"/>
+    <xs:attribute name="specific" type="xs:unsignedByte" use="optional" default="0"/>
+    <xs:attribute name="extra" type="xs:unsignedByte" use="optional" default="0"/>
+  </xs:complexType>
+
+  <xs:complexType name="EntityType">
+    <xs:annotation>
+      <xs:documentation>Entité : conteneur d'équipements, positionnée et orientée, identifiée par un nom unique.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="DisType" type="x:DisEntityTypeType"/>
+      <xs:element name="Position" type="x:PositionType"/>
+      <xs:element name="Orientation" type="x:OrientationType"/>
+      <xs:element name="Parameters" type="x:ParametersType" minOccurs="0"/>
+      <xs:element name="Equipments" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Equipment" type="x:EquipmentType" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="Tasks" type="x:TasksType" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="name" type="x:IdentifierType" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="EntitiesType">
+    <xs:sequence>
+      <xs:element name="Entity" type="x:EntityType" maxOccurs="unbounded">
+        <!-- Nom d'équipement unique au sein de son entité. -->
+        <xs:unique name="EquipmentNameUnique">
+          <xs:selector xpath="x:Equipments/x:Equipment"/>
+          <xs:field xpath="@name"/>
+        </xs:unique>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- ================================================================== -->
+  <!-- Unités                                                             -->
+  <!-- ================================================================== -->
+
+  <xs:complexType name="EntityRefType">
+    <xs:attribute name="entity" type="x:IdentifierType" use="required">
+      <xs:annotation><xs:documentation>Nom d'une entité déclarée dans Entities.</xs:documentation></xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <xs:complexType name="UnitType">
+    <xs:annotation>
+      <xs:documentation>Unité : groupe d'entités (référencées par leur nom), pouvant contenir des sous-unités.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="EntityRef" type="x:EntityRefType" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="Unit" type="x:UnitType" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="Tasks" type="x:TasksType" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="name" type="x:IdentifierType" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="UnitsType">
+    <xs:sequence>
+      <xs:element name="Unit" type="x:UnitType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+</xs:schema>
