@@ -266,6 +266,64 @@
     </xs:sequence>
   </xs:complexType>
 
+  <xs:complexType name="BoundValueType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute name="inclusive" type="xs:boolean" use="optional" default="true"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+
+  <xs:complexType name="ConstraintsType">
+    <xs:annotation>
+      <xs:documentation>Contraintes sur la valeur d'une donnée technologique. Toutes sont optionnelles et cumulables.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="Min" type="x:BoundValueType" minOccurs="0">
+        <xs:annotation><xs:documentation>Borne inférieure (incluse par défaut).</xs:documentation></xs:annotation>
+      </xs:element>
+      <xs:element name="Max" type="x:BoundValueType" minOccurs="0">
+        <xs:annotation><xs:documentation>Borne supérieure (incluse par défaut).</xs:documentation></xs:annotation>
+      </xs:element>
+      <xs:element name="Bound" minOccurs="0">
+        <xs:annotation><xs:documentation>Bornes de taille, pour un tableau ou une chaîne : nombre d'éléments minimal et maximal.</xs:documentation></xs:annotation>
+        <xs:complexType>
+          <xs:attribute name="minLength" type="xs:nonNegativeInteger" use="optional"/>
+          <xs:attribute name="maxLength" type="xs:nonNegativeInteger" use="optional"/>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="ListOfValues" minOccurs="0">
+        <xs:annotation><xs:documentation>Liste fermée des valeurs autorisées.</xs:documentation></xs:annotation>
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Value" type="xs:string" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="Pattern" type="xs:string" minOccurs="0">
+        <xs:annotation><xs:documentation>Expression régulière que la valeur textuelle doit respecter.</xs:documentation></xs:annotation>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="TechnologicalParameterType">
+    <xs:annotation>
+      <xs:documentation>Donnée technologique : valeur typée, éventuellement contrainte.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="Value" type="xs:string" minOccurs="0"/>
+      <xs:element name="Constraints" type="x:ConstraintsType" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="name" type="x:IdentifierType" use="required"/>
+    <xs:attribute name="dataType" type="x:IdentifierType" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="TechnologicalDataType">
+    <xs:sequence>
+      <xs:element name="Parameter" type="x:TechnologicalParameterType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
   <xs:complexType name="TaskType">
     <xs:annotation>
       <xs:documentation>Tâche générique, rattachable à un équipement, une entité ou une unité.</xs:documentation>
@@ -299,7 +357,7 @@
         Ses variables sont de deux sortes : données technologiques et données d'initialisation.</xs:documentation>
     </xs:annotation>
     <xs:sequence>
-      <xs:element name="TechnologicalData" type="x:ParametersType" minOccurs="0">
+      <xs:element name="TechnologicalData" type="x:TechnologicalDataType" minOccurs="0">
         <xs:annotation><xs:documentation>Données technologiques : caractéristiques de l'équipement (ex. portée, bande de fréquences).</xs:documentation></xs:annotation>
       </xs:element>
       <xs:element name="InitializationData" type="x:ParametersType" minOccurs="0">

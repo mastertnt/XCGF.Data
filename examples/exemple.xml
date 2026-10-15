@@ -50,8 +50,20 @@
       <Equipments>
         <Equipment name="Radio" type="Radio">
           <TechnologicalData>
-            <Parameter name="Frequencies" dataType="FrequencyList">30000000 30025000</Parameter>
-            <Parameter name="MaxRange" dataType="RangeMeters">8000</Parameter>
+            <Parameter name="Frequencies" dataType="FrequencyList">
+              <Value>30000000 30025000</Value>
+              <Constraints>
+                <Min>30000000</Min>
+                <Max>87975000</Max>
+                <Bound minLength="1" maxLength="16"/>
+              </Constraints>
+            </Parameter>
+            <Parameter name="MaxRange" dataType="RangeMeters">
+              <Value>8000</Value>
+              <Constraints>
+                <Min inclusive="false">0</Min>
+              </Constraints>
+            </Parameter>
           </TechnologicalData>
           <InitializationData>
             <Parameter name="ActiveFrequency" dataType="FrequencyHz">30000000</Parameter>
@@ -86,7 +98,16 @@
       <Equipments>
         <Equipment name="Radar" type="Radar">
           <TechnologicalData>
-            <Parameter name="MaxRange" dataType="RangeMeters">20000</Parameter>
+            <Parameter name="MaxRange" dataType="RangeMeters">
+              <Value>20000</Value>
+              <Constraints>
+                <ListOfValues>
+                  <Value>10000</Value>
+                  <Value>20000</Value>
+                  <Value>40000</Value>
+                </ListOfValues>
+              </Constraints>
+            </Parameter>
           </TechnologicalData>
           <InitializationData>
             <Parameter name="Mode" dataType="RadarModeEnum">Search</Parameter>
