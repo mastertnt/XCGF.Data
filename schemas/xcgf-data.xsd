@@ -364,25 +364,37 @@
     <xs:attribute name="roll" type="x:RollType" use="required"/>
   </xs:complexType>
 
-  <xs:complexType name="DisEntityTypeType">
+  <xs:simpleType name="DisEntityTypeType">
     <xs:annotation>
-      <xs:documentation>Type d'entité DIS (IEEE 1278.1, Entity Type Record) : kind.domain.country.category.subcategory.specific.extra.</xs:documentation>
+      <xs:documentation>Type d'entité DIS (IEEE 1278.1, Entity Type Record) en notation pointée
+        Kind.Domain.Country.Category.Subcategory.Specific.Extra, par exemple 1.1.225.1.0.0.0.
+        Country est sur 16 bits, les autres champs sur 8 bits. Même notation que XCGF.ArchetypeEditor.</xs:documentation>
     </xs:annotation>
-    <xs:attribute name="kind" type="xs:unsignedByte" use="required"/>
-    <xs:attribute name="domain" type="xs:unsignedByte" use="required"/>
-    <xs:attribute name="country" type="xs:unsignedShort" use="required"/>
-    <xs:attribute name="category" type="xs:unsignedByte" use="required"/>
-    <xs:attribute name="subcategory" type="xs:unsignedByte" use="optional" default="0"/>
-    <xs:attribute name="specific" type="xs:unsignedByte" use="optional" default="0"/>
-    <xs:attribute name="extra" type="xs:unsignedByte" use="optional" default="0"/>
-  </xs:complexType>
+    <xs:restriction base="xs:string">
+      <xs:pattern value="(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.(6553[0-5]|655[0-2][0-9]|65[0-4][0-9]{2}|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{0,3}|0)\.(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="EnvironmentType">
+    <xs:annotation>
+      <xs:documentation>Environnement d'évolution, aligné sur le domaine DIS (comme EntityEnvironment de XCGF.ArchetypeEditor).</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Other"/>
+      <xs:enumeration value="Land"/>
+      <xs:enumeration value="Air"/>
+      <xs:enumeration value="Surface"/>
+      <xs:enumeration value="Subsurface"/>
+      <xs:enumeration value="Space"/>
+    </xs:restriction>
+  </xs:simpleType>
 
   <xs:complexType name="EntityType">
     <xs:annotation>
       <xs:documentation>Entité : conteneur d'équipements, positionnée et orientée, identifiée par un nom unique.</xs:documentation>
     </xs:annotation>
     <xs:sequence>
-      <xs:element name="DisType" type="x:DisEntityTypeType"/>
+      <xs:element name="Description" type="xs:string" minOccurs="0"/>
       <xs:element name="Position" type="x:PositionType"/>
       <xs:element name="Orientation" type="x:OrientationType"/>
       <xs:element name="Parameters" type="x:ParametersType" minOccurs="0"/>
@@ -396,6 +408,11 @@
       <xs:element name="Tasks" type="x:TasksType" minOccurs="0"/>
     </xs:sequence>
     <xs:attribute name="name" type="x:IdentifierType" use="required"/>
+    <xs:attribute name="disType" type="x:DisEntityTypeType" use="required"/>
+    <xs:attribute name="environment" type="x:EnvironmentType" use="optional"/>
+    <xs:attribute name="folder" type="xs:string" use="optional">
+      <xs:annotation><xs:documentation>Classement dans la bibliothèque, segments séparés par '/' (ex. Platforms/Armored).</xs:documentation></xs:annotation>
+    </xs:attribute>
   </xs:complexType>
 
   <xs:complexType name="EntitiesType">

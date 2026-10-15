@@ -39,9 +39,9 @@
   </DataTypes>
 
   <Entities>
-    <Entity name="VBL_01">
-      <!-- 1.1.71.2.x : plateforme terrestre, France, véhicule blindé léger. -->
-      <DisType kind="1" domain="1" country="71" category="2" subcategory="1"/>
+    <!-- 1.1.71.2.1.0.0 : plateforme terrestre, France, véhicule blindé (codes illustratifs). -->
+    <Entity name="VBL_01" disType="1.1.71.2.1.0.0" environment="Land" folder="Platforms/Armored">
+      <Description>Véhicule blindé léger de tête.</Description>
       <Position latitude="48.7125" longitude="2.2010" altitude="160"/>
       <Orientation heading="90" pitch="0" roll="0"/>
       <Parameters>
@@ -67,8 +67,7 @@
       </Tasks>
     </Entity>
 
-    <Entity name="VBL_02">
-      <DisType kind="1" domain="1" country="71" category="2" subcategory="1"/>
+    <Entity name="VBL_02" disType="1.1.71.2.1.0.0" environment="Land" folder="Platforms/Armored">
       <Position latitude="48.7130" longitude="2.2025" altitude="161"/>
       <Orientation heading="92.5" pitch="1.5" roll="-0.5"/>
       <Equipments>
@@ -76,9 +75,8 @@
       </Equipments>
     </Entity>
 
-    <Entity name="Tigre_01">
-      <!-- 1.2.71.20 : plateforme aérienne, France, hélicoptère d'attaque. -->
-      <DisType kind="1" domain="2" country="71" category="20" subcategory="1"/>
+    <!-- 1.2.71.20.1.0.0 : plateforme aérienne, France, hélicoptère d'attaque (codes illustratifs). -->
+    <Entity name="Tigre_01" disType="1.2.71.20.1.0.0" environment="Air" folder="Rotary wing">
       <Position latitude="48.7300" longitude="2.1900" altitude="450"/>
       <Orientation heading="270" pitch="-2" roll="0"/>
       <Equipments>
