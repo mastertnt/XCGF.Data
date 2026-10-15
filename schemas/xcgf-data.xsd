@@ -52,7 +52,7 @@
 
     <!-- Noms de types de données : uniques toutes catégories confondues. -->
     <xs:key name="DataTypeKey">
-      <xs:selector xpath="x:DataTypes/x:BasicData|x:DataTypes/x:SimpleData|x:DataTypes/x:EnumeratedData|x:DataTypes/x:ArrayData|x:DataTypes/x:FixedRecordData|x:DataTypes/x:VariantRecordData"/>
+      <xs:selector xpath="x:DataTypes/x:BasicData|x:DataTypes/x:SimpleData|x:DataTypes/x:EnumeratedData|x:DataTypes/x:ArrayData|x:DataTypes/x:FixedRecordData|x:DataTypes/x:VariantRecordData|x:DataTypes/x:ReferenceData"/>
       <xs:field xpath="@name"/>
     </xs:key>
 
@@ -147,6 +147,17 @@
       <xs:field xpath="@task"/>
     </xs:keyref>
 
+    <!-- Une valeur Ref désigne une entité et une unité existantes. -->
+    <xs:keyref name="InstanceRefEntity" refer="x:EntityNameKey">
+      <xs:selector xpath=".//x:Ref"/>
+      <xs:field xpath="@entity"/>
+    </xs:keyref>
+
+    <xs:keyref name="InstanceRefUnit" refer="x:UnitNameKey">
+      <xs:selector xpath=".//x:Ref"/>
+      <xs:field xpath="@unit"/>
+    </xs:keyref>
+
     <!-- Une unité ne peut référencer qu'une entité existante. -->
     <xs:keyref name="UnitEntityRef" refer="x:EntityNameKey">
       <xs:selector xpath=".//x:EntityRef"/>
@@ -205,6 +216,7 @@
       <xs:element name="ArrayData" type="x:ArrayDataType"/>
       <xs:element name="FixedRecordData" type="x:FixedRecordDataType"/>
       <xs:element name="VariantRecordData" type="x:VariantRecordDataType"/>
+      <xs:element name="ReferenceData" type="x:ReferenceDataType"/>
     </xs:choice>
     <xs:attributeGroup ref="x:FileRootAttributes"/>
   </xs:complexType>
@@ -316,6 +328,26 @@
           <xs:annotation><xs:documentation>Type énuméré du discriminant.</xs:documentation></xs:annotation>
         </xs:attribute>
         <xs:attribute name="encoding" type="xs:string" use="optional" default="HLAvariantRecord"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:simpleType name="ReferenceTargetType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Unit"/>
+      <xs:enumeration value="Entity"/>
+      <xs:enumeration value="Equipment"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="ReferenceDataType">
+    <xs:annotation>
+      <xs:documentation>Extension XCGF (hors OMT HLA) : référence à une instance d'unité, d'entité (plateforme)
+        ou d'équipement, jamais à un type ou à une définition. La valeur d'une donnée de ce type est un Ref.</xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="x:DataTypeBase">
+        <xs:attribute name="target" type="x:ReferenceTargetType" use="required"/>
       </xs:extension>
     </xs:complexContent>
   </xs:complexType>
@@ -436,11 +468,28 @@
       <xs:documentation>Donnée d'équipement (technologique ou d'initialisation) : valeur typée, éventuellement contrainte.</xs:documentation>
     </xs:annotation>
     <xs:sequence>
-      <xs:element name="Value" type="xs:string" minOccurs="0"/>
+      <xs:choice minOccurs="0">
+        <xs:element name="Value" type="xs:string"/>
+        <xs:element name="Ref" type="x:InstanceRefType">
+          <xs:annotation><xs:documentation>Valeur d'une donnée de type ReferenceData.</xs:documentation></xs:annotation>
+        </xs:element>
+      </xs:choice>
       <xs:element name="Constraints" type="x:ConstraintsType" minOccurs="0"/>
     </xs:sequence>
     <xs:attribute name="name" type="x:IdentifierType" use="required"/>
     <xs:attribute name="dataType" type="x:IdentifierType" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="InstanceRefType">
+    <xs:annotation>
+      <xs:documentation>Référence à une instance : unité (@unit), entité (@entity), ou équipement (@equipment,
+        de l'entité @entity, ou du porteur si @entity est absent). Les noms d'unités et d'entités
+        sont vérifiés par le schéma ; l'existence de l'équipement et l'accord avec la cible du
+        ReferenceData sont vérifiés par l'outil.</xs:documentation>
+    </xs:annotation>
+    <xs:attribute name="unit" type="x:IdentifierType" use="optional"/>
+    <xs:attribute name="entity" type="x:IdentifierType" use="optional"/>
+    <xs:attribute name="equipment" type="x:IdentifierType" use="optional"/>
   </xs:complexType>
 
   <xs:complexType name="DataItemsType">

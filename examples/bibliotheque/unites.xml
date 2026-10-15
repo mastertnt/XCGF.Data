@@ -13,7 +13,10 @@
       </Tasks>
     </Unit>
     <Tasks>
-      <TaskRef task="Reconnaissance"/>
+      <TaskRef task="Reconnaissance">
+        <Parameter name="ReportTo" dataType="UnitReference"><Ref unit="Patrouille_1"/></Parameter>
+        <Parameter name="Sensor" dataType="EquipmentReference"><Ref entity="Tigre_01" equipment="Radar"/></Parameter>
+      </TaskRef>
     </Tasks>
   </Unit>
 </Units>

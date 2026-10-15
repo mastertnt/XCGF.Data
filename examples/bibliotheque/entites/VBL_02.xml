@@ -10,6 +10,9 @@
     <Equipment name="Radio" definition="PR4G_Vehicule"/>
   </Equipments>
   <Tasks>
-    <TaskRef task="MoveTo"/>
+    <!-- Escorté par la plateforme VBL_01 (instance). -->
+    <TaskRef task="MoveTo">
+      <Parameter name="Escort" dataType="EntityReference"><Ref entity="VBL_01"/></Parameter>
+    </TaskRef>
   </Tasks>
 </Entity>
