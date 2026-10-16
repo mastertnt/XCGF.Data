@@ -8,8 +8,9 @@
   <KinematicDefinition name="Kinematic">
     <Description>Base kinematic: position and orientation.</Description>
     <InitializationData>
-      <Parameter name="Position" dataType="GeoPosition"/>
-      <Parameter name="Orientation" dataType="Orientation"/>
+      <!-- Set at start, then produced by the kinematic during execution. -->
+      <Parameter name="Position" dataType="GeoPosition" direction="InOut"/>
+      <Parameter name="Orientation" dataType="Orientation" direction="InOut"/>
     </InitializationData>
   </KinematicDefinition>
 
@@ -74,6 +75,8 @@
     </TechnologicalData>
     <InitializationData>
       <Parameter name="Armed" dataType="HLAboolean"><DefaultValue>HLAtrue</DefaultValue></Parameter>
+      <!-- Output: set by the missile once fired. -->
+      <Parameter name="Fired" dataType="HLAboolean" direction="Out"/>
     </InitializationData>
   </EquipmentDefinition>
 
