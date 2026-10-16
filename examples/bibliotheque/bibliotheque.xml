@@ -12,9 +12,7 @@
   <xi:include href="equipements.xml"/>
   <xi:include href="taches.xml"/>
   <Entities>
-    <xi:include href="entites/VBL.xml"/>
-    <xi:include href="entites/Tigre.xml"/>
-    <xi:include href="entites/Rafale.xml"/>
+    <xi:include href="entites/Fighter.xml"/>
   </Entities>
   <xi:include href="unites.xml"/>
 </XcgfData>

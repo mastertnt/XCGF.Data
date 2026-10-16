@@ -1,141 +1,129 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   Bibliothèque de tâches, référencées par les équipements, les entités et les unités (TaskRef).
-  Paramètres rangés selon les 5W, tous optionnels sauf required="true".
+  WhoTaskee est obligatoire ; les autres catégories 5W et tous les paramètres sont optionnels,
+  sauf required="true".
 -->
 <TaskLibrary xmlns="urn:xcgf:data:1.0">
 
   <TaskDefinition name="MoveTo">
-    <Description>Se déplacer jusqu'à une destination.</Description>
-    <!-- Seule Destination est obligatoire (required="true") ; tous les autres paramètres sont
-         optionnels (required="false", valeur par défaut de l'attribut) et peuvent être omis
-         dans un TaskRef. Speed a une valeur par défaut (10 m/s). -->
-    <WhoTasker>
-      <Parameter name="Commander" dataType="EntityReference" required="false"/>
-    </WhoTasker>
+    <Description>Rejoindre une position géographique, sans tenir compte de l'altitude.</Description>
     <WhoTaskee>
-      <Parameter name="Executor" dataType="EntityReference" required="false"/>
+      <Parameter name="Executor" dataType="EntityReference"/>
     </WhoTaskee>
-    <WhoAffected>
-      <Parameter name="Escort" dataType="EntityReference" required="false"/>
-    </WhoAffected>
     <What>
-      <Parameter name="Speed" dataType="SpeedMetersPerSecond" required="false">
-        <DefaultValue>10</DefaultValue>
+      <Parameter name="Speed" dataType="SpeedMetersPerSecond">
+        <DefaultValue>250</DefaultValue>
         <Constraints>
           <Min value="0" inclusive="false"/>
         </Constraints>
       </Parameter>
-      <Parameter name="Formation" dataType="HLAASCIIstring" required="false">
-        <Constraints>
-          <ListOfValues>
-            <Value>Column</Value>
-            <Value>Line</Value>
-            <Value>Wedge</Value>
-          </ListOfValues>
-        </Constraints>
-      </Parameter>
     </What>
-    <When>
-      <Parameter name="MaxDuration" dataType="DurationSeconds" required="false"/>
-    </When>
     <Where>
-      <Parameter name="Destination" dataType="GeoPosition" required="true"/>
-      <Parameter name="Route" dataType="WaypointList" required="false"/>
+      <!-- Point 2D : l'altitude est ignorée. -->
+      <Parameter name="Destination" dataType="GeoPoint2D" required="true"/>
     </Where>
-    <Why>
-      <Parameter name="Intent" dataType="HLAASCIIstring" required="false"/>
-    </Why>
     <ActivationTrigger>
-      <OnEvent event="OrderReceived"/>
+      <Immediate/>
     </ActivationTrigger>
     <ExitTriggers>
       <ExitTrigger outcome="Success">
-        <OnPositionReached parameter="Destination" tolerance="50"/>
+        <OnPositionReached parameter="Destination" tolerance="500"/>
       </ExitTrigger>
       <ExitTrigger outcome="Failure">
         <AtTime delay="PT1H"/>
       </ExitTrigger>
+    </ExitTriggers>
+  </TaskDefinition>
+
+  <TaskDefinition name="FireOnTarget">
+    <Description>Tirer sur une cible.</Description>
+    <WhoTasker>
+      <Parameter name="Commander" dataType="EntityReference"/>
+    </WhoTasker>
+    <WhoTaskee>
+      <Parameter name="Shooter" dataType="EntityReference"/>
+    </WhoTaskee>
+    <WhoAffected>
+      <Parameter name="Target" dataType="EntityReference" required="true"/>
+    </WhoAffected>
+    <What>
+      <!-- Moyen employé : un équipement de l'exécutant. -->
+      <Parameter name="Weapon" dataType="EquipmentReference"/>
+      <Parameter name="Salvo" dataType="Count">
+        <DefaultValue>1</DefaultValue>
+        <Constraints>
+          <Min value="1"/>
+          <Max value="2"/>
+        </Constraints>
+      </Parameter>
+    </What>
+    <ActivationTrigger>
+      <OnCondition expression="InRange(Weapon, Target)"/>
+    </ActivationTrigger>
+    <ExitTriggers>
+      <ExitTrigger outcome="Success">
+        <OnEvent event="TargetDestroyed"/>
+      </ExitTrigger>
+      <ExitTrigger outcome="Failure">
+        <OnEvent event="WeaponsExhausted"/>
+      </ExitTrigger>
       <ExitTrigger outcome="Aborted">
-        <OnEvent event="EnemyDetected"/>
+        <OnEvent event="CeaseFire"/>
       </ExitTrigger>
     </ExitTriggers>
   </TaskDefinition>
 
-  <TaskDefinition name="Patrol">
+  <TaskDefinition name="FollowFlightPlan">
+    <Description>Suivre un plan de vol.</Description>
     <WhoTaskee>
       <Parameter name="Executor" dataType="EntityReference"/>
     </WhoTaskee>
-    <When>
-      <Parameter name="Duration" dataType="DurationSeconds"><DefaultValue>7200</DefaultValue></Parameter>
-    </When>
+    <What>
+      <Parameter name="Loop" dataType="HLAboolean"><DefaultValue>HLAfalse</DefaultValue></Parameter>
+    </What>
     <Where>
-      <Parameter name="Route" dataType="WaypointList" required="true"/>
+      <Parameter name="Plan" dataType="FlightPlan" required="true"/>
     </Where>
     <ActivationTrigger>
       <OnTaskEnd task="MoveTo" outcome="Success"/>
     </ActivationTrigger>
     <ExitTriggers>
-      <ExitTrigger>
-        <AtTime delay="PT2H"/>
+      <ExitTrigger outcome="Success">
+        <CustomTrigger kind="FlightPlanCompleted"/>
+      </ExitTrigger>
+      <ExitTrigger outcome="Aborted">
+        <OnCondition expression="Fuel &lt; 0.1"/>
       </ExitTrigger>
     </ExitTriggers>
   </TaskDefinition>
 
-  <TaskDefinition name="Reconnaissance">
+  <TaskDefinition name="ChangeFormation">
+    <Description>Faire changer de formation une unité.</Description>
     <WhoTaskee>
-      <Parameter name="Executor" dataType="EntityReference"/>
+      <!-- Le chef de patrouille conduit le changement (Who ne contient que des entités). -->
+      <Parameter name="Leader" dataType="EntityReference"/>
     </WhoTaskee>
-    <WhoAffected>
-      <Parameter name="Target" dataType="EntityReference"/>
-    </WhoAffected>
     <What>
-      <!-- Les Who ne contiennent que des entités : unité et équipement vont dans What. -->
-      <Parameter name="ReportTo" dataType="UnitReference"/>
-      <Parameter name="Sensor" dataType="EquipmentReference"/>
+      <Parameter name="Formation" dataType="FormationEnum" required="true"/>
+      <Parameter name="Spacing" dataType="DistanceMeters">
+        <DefaultValue>1000</DefaultValue>
+        <Constraints>
+          <Min value="100"/>
+        </Constraints>
+      </Parameter>
     </What>
-    <Where>
-      <Parameter name="Area" dataType="WaypointList" required="true"/>
-    </Where>
     <ActivationTrigger>
-      <AtTime delay="PT10M"/>
+      <Immediate/>
     </ActivationTrigger>
     <ExitTriggers>
-      <ExitTrigger>
-        <CustomTrigger kind="AreaCovered">
-          <Argument name="coverage" value="0.9"/>
+      <ExitTrigger outcome="Success">
+        <CustomTrigger kind="FormationEstablished">
+          <Argument name="tolerance" value="100"/>
         </CustomTrigger>
       </ExitTrigger>
-    </ExitTriggers>
-  </TaskDefinition>
-
-  <TaskDefinition name="Transmit">
-    <WhoTaskee>
-      <Parameter name="Executor" dataType="EntityReference"/>
-    </WhoTaskee>
-    <What>
-      <Parameter name="Message" dataType="HLAASCIIstring"/>
-    </What>
-    <ActivationTrigger>
-      <Immediate/>
-    </ActivationTrigger>
-    <ExitTriggers>
-      <ExitTrigger>
+      <ExitTrigger outcome="Failure">
         <AtTime delay="PT5M"/>
-      </ExitTrigger>
-    </ExitTriggers>
-  </TaskDefinition>
-
-  <TaskDefinition name="Detect">
-    <WhoTaskee>
-      <Parameter name="Executor" dataType="EntityReference"/>
-    </WhoTaskee>
-    <ActivationTrigger>
-      <Immediate/>
-    </ActivationTrigger>
-    <ExitTriggers>
-      <ExitTrigger>
-        <OnCondition expression="Mode = Off"/>
       </ExitTrigger>
     </ExitTriggers>
   </TaskDefinition>

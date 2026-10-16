@@ -5,12 +5,15 @@
   <BasicData name="HLAfloat64BE" size="64" interpretation="Réel double précision" endian="Big" encoding="IEEE 754"/>
   <BasicData name="HLAoctet" size="8" interpretation="Octet" endian="Big" encoding="8 bits"/>
 
-  <SimpleData name="FrequencyHz" representation="HLAfloat64BE" units="Hz" resolution="1" accuracy="1">
-    <Semantics>Fréquence radio.</Semantics>
-  </SimpleData>
-  <SimpleData name="RangeMeters" representation="HLAfloat64BE" units="m" resolution="0.1" accuracy="1"/>
-  <SimpleData name="DurationSeconds" representation="HLAfloat64BE" units="s" resolution="1" accuracy="1"/>
+  <SimpleData name="AngleDegrees" representation="HLAfloat64BE" units="deg" resolution="0.01" accuracy="0.01"/>
+  <SimpleData name="DistanceMeters" representation="HLAfloat64BE" units="m" resolution="0.1" accuracy="1"/>
   <SimpleData name="SpeedMetersPerSecond" representation="HLAfloat64BE" units="m/s" resolution="0.01" accuracy="0.1"/>
+  <SimpleData name="Count" representation="HLAinteger32BE" units="NA"/>
+
+  <EnumeratedData name="HLAboolean" representation="HLAinteger32BE">
+    <Enumerator name="HLAfalse" value="0"/>
+    <Enumerator name="HLAtrue" value="1"/>
+  </EnumeratedData>
 
   <EnumeratedData name="RadarModeEnum" representation="HLAinteger32BE">
     <Enumerator name="Off" value="0"/>
@@ -18,16 +21,27 @@
     <Enumerator name="Track" value="2"/>
   </EnumeratedData>
 
-  <ArrayData name="HLAASCIIstring" dataType="HLAoctet" cardinality="Dynamic" encoding="HLAvariableArray"/>
-  <ArrayData name="FrequencyList" dataType="FrequencyHz" cardinality="Dynamic" encoding="HLAvariableArray"/>
+  <EnumeratedData name="FormationEnum" representation="HLAinteger32BE">
+    <Enumerator name="Line" value="0"/>
+    <Enumerator name="Trail" value="1"/>
+    <Enumerator name="Echelon" value="2"/>
+    <Enumerator name="Wedge" value="3"/>
+    <Enumerator name="Spread" value="4"/>
+  </EnumeratedData>
 
-  <SimpleData name="AngleDegrees" representation="HLAfloat64BE" units="deg" resolution="0.01" accuracy="0.01"/>
+  <ArrayData name="HLAASCIIstring" dataType="HLAoctet" cardinality="Dynamic" encoding="HLAvariableArray"/>
 
   <FixedRecordData name="GeoPosition">
-    <Semantics>Position géodésique WGS84.</Semantics>
+    <Semantics>Position géodésique WGS84 (altitude en mètres).</Semantics>
     <Field name="Latitude" dataType="AngleDegrees"/>
     <Field name="Longitude" dataType="AngleDegrees"/>
-    <Field name="Altitude" dataType="RangeMeters"/>
+    <Field name="Altitude" dataType="DistanceMeters"/>
+  </FixedRecordData>
+
+  <FixedRecordData name="GeoPoint2D">
+    <Semantics>Point géographique WGS84 sans altitude.</Semantics>
+    <Field name="Latitude" dataType="AngleDegrees"/>
+    <Field name="Longitude" dataType="AngleDegrees"/>
   </FixedRecordData>
 
   <FixedRecordData name="Orientation">
@@ -37,15 +51,15 @@
     <Field name="Roll" dataType="AngleDegrees"/>
   </FixedRecordData>
 
-  <ArrayData name="WaypointList" dataType="GeoPosition" cardinality="1..64" encoding="HLAvariableArray"/>
+  <FixedRecordData name="FlightPlanWaypoint">
+    <Field name="Position" dataType="GeoPosition"/>
+    <Field name="Speed" dataType="SpeedMetersPerSecond"/>
+  </FixedRecordData>
 
-  <VariantRecordData name="RadarSettings" discriminant="Mode" dataType="RadarModeEnum">
-    <Alternative enumerator="Search" name="SearchRange" dataType="RangeMeters"/>
-    <Alternative enumerator="Track" name="TrackId" dataType="HLAinteger32BE"/>
-  </VariantRecordData>
+  <ArrayData name="FlightPlan" dataType="FlightPlanWaypoint" cardinality="1..100" encoding="HLAvariableArray"/>
 
   <!-- Références à des instances (extension XCGF) : l'archétype déclare la donnée, l'instance visée est choisie au scénario. -->
-  <ReferenceData name="UnitReference" target="Unit"/>
   <ReferenceData name="EntityReference" target="Entity"/>
   <ReferenceData name="EquipmentReference" target="Equipment"/>
+  <ReferenceData name="UnitReference" target="Unit"/>
 </DataTypes>
