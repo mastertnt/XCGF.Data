@@ -1,15 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  XCGF.Data : schéma de description des données XCGF.
+  XCGF.Data : schéma de description des archétypes XCGF.
+
+  Le schéma ne décrit que des archétypes (types d'entités, d'équipements, d'unités, de tâches),
+  jamais des instances : pas de position effective, pas de référence à une instance concrète.
+  Toute valeur portée par une donnée est donc une valeur par défaut (DefaultValue), que
+  l'instanciation (scénario) pourra remplacer.
 
   Le document décrit :
     - des types de données, sur le modèle de l'OMT HLA (IEEE 1516-2010) ;
     - une bibliothèque d'équipements (définitions réutilisables) ;
-    - des entités (type DIS, nom unique), conteneurs d'équipements, avec un équipement cinématique
-      obligatoire qui porte position et orientation ; les définitions peuvent dériver les unes des autres.
+    - des archétypes d'entités (type DIS, nom unique), conteneurs d'équipements, avec un équipement
+      cinématique obligatoire dont la définition déclare au minimum position et orientation ; les
+      définitions peuvent dériver les unes des autres.
       Un équipement d'entité n'existe qu'à l'intérieur de celle-ci ; il peut s'appuyer
       sur une définition de la bibliothèque ;
-    - des unités, groupes d'entités (et éventuellement de sous-unités) ;
+    - des archétypes d'unités, compositions d'archétypes d'entités (et de sous-unités) ;
     - une bibliothèque de tâches (paramètres 5W optionnels, trigger d'activation, triggers de
       sortie), référencées par les équipements, les entités et les unités.
 
@@ -129,9 +135,9 @@
       <xs:field xpath="@name"/>
     </xs:key>
 
-    <!-- Nom d'unité unique parmi toutes les unités, sous-unités comprises. -->
+    <!-- Nom d'archétype d'unité unique. -->
     <xs:key name="UnitNameKey">
-      <xs:selector xpath=".//x:Unit"/>
+      <xs:selector xpath="x:Units/x:Unit"/>
       <xs:field xpath="@name"/>
     </xs:key>
 
@@ -147,18 +153,13 @@
       <xs:field xpath="@task"/>
     </xs:keyref>
 
-    <!-- Une valeur Ref désigne une entité et une unité existantes. -->
-    <xs:keyref name="InstanceRefEntity" refer="x:EntityNameKey">
-      <xs:selector xpath=".//x:Ref"/>
-      <xs:field xpath="@entity"/>
-    </xs:keyref>
-
-    <xs:keyref name="InstanceRefUnit" refer="x:UnitNameKey">
-      <xs:selector xpath=".//x:Ref"/>
+    <!-- Une sous-unité désigne un archétype d'unité existant (les cycles sont détectés par l'outil). -->
+    <xs:keyref name="UnitUnitRef" refer="x:UnitNameKey">
+      <xs:selector xpath=".//x:UnitRef"/>
       <xs:field xpath="@unit"/>
     </xs:keyref>
 
-    <!-- Une unité ne peut référencer qu'une entité existante. -->
+    <!-- Une unité ne peut référencer qu'un archétype d'entité existant. -->
     <xs:keyref name="UnitEntityRef" refer="x:EntityNameKey">
       <xs:selector xpath=".//x:EntityRef"/>
       <xs:field xpath="@entity"/>
@@ -343,7 +344,8 @@
   <xs:complexType name="ReferenceDataType">
     <xs:annotation>
       <xs:documentation>Extension XCGF (hors OMT HLA) : référence à une instance d'unité, d'entité (plateforme)
-        ou d'équipement, jamais à un type ou à une définition. La valeur d'une donnée de ce type est un Ref.</xs:documentation>
+        ou d'équipement, jamais à un type ou à une définition. Un archétype ne fait que déclarer une donnée
+        de ce type ; l'instance visée est désignée à l'instanciation (scénario), donc sans DefaultValue ici.</xs:documentation>
     </xs:annotation>
     <xs:complexContent>
       <xs:extension base="x:DataTypeBase">
@@ -355,24 +357,6 @@
   <!-- ================================================================== -->
   <!-- Paramètres et tâches                                               -->
   <!-- ================================================================== -->
-
-  <xs:complexType name="ParameterType">
-    <xs:annotation>
-      <xs:documentation>Valeur nommée, typée par un type de données déclaré. La valeur est portée en texte.</xs:documentation>
-    </xs:annotation>
-    <xs:simpleContent>
-      <xs:extension base="xs:string">
-        <xs:attribute name="name" type="x:IdentifierType" use="required"/>
-        <xs:attribute name="dataType" type="x:IdentifierType" use="required"/>
-      </xs:extension>
-    </xs:simpleContent>
-  </xs:complexType>
-
-  <xs:complexType name="ParametersType">
-    <xs:sequence>
-      <xs:element name="Parameter" type="x:ParameterType" maxOccurs="unbounded"/>
-    </xs:sequence>
-  </xs:complexType>
 
   <!-- Contraintes : groupe de substitution extensible -->
 
@@ -465,31 +449,16 @@
 
   <xs:complexType name="DataItemType">
     <xs:annotation>
-      <xs:documentation>Donnée d'équipement (technologique ou d'initialisation) : valeur typée, éventuellement contrainte.</xs:documentation>
+      <xs:documentation>Donnée typée (équipement, tâche, entité) : valeur par défaut éventuelle et contraintes.
+        Dans une définition dérivée ou un usage de définition (Equipment, Kinematic, TaskRef), une donnée
+        de même nom remplace la valeur par défaut ou complète les contraintes héritées.</xs:documentation>
     </xs:annotation>
     <xs:sequence>
-      <xs:choice minOccurs="0">
-        <xs:element name="Value" type="xs:string"/>
-        <xs:element name="Ref" type="x:InstanceRefType">
-          <xs:annotation><xs:documentation>Valeur d'une donnée de type ReferenceData.</xs:documentation></xs:annotation>
-        </xs:element>
-      </xs:choice>
+      <xs:element name="DefaultValue" type="xs:string" minOccurs="0"/>
       <xs:element name="Constraints" type="x:ConstraintsType" minOccurs="0"/>
     </xs:sequence>
     <xs:attribute name="name" type="x:IdentifierType" use="required"/>
     <xs:attribute name="dataType" type="x:IdentifierType" use="required"/>
-  </xs:complexType>
-
-  <xs:complexType name="InstanceRefType">
-    <xs:annotation>
-      <xs:documentation>Référence à une instance : unité (@unit), entité (@entity), ou équipement (@equipment,
-        de l'entité @entity, ou du porteur si @entity est absent). Les noms d'unités et d'entités
-        sont vérifiés par le schéma ; l'existence de l'équipement et l'accord avec la cible du
-        ReferenceData sont vérifiés par l'outil.</xs:documentation>
-    </xs:annotation>
-    <xs:attribute name="unit" type="x:IdentifierType" use="optional"/>
-    <xs:attribute name="entity" type="x:IdentifierType" use="optional"/>
-    <xs:attribute name="equipment" type="x:IdentifierType" use="optional"/>
   </xs:complexType>
 
   <xs:complexType name="DataItemsType">
@@ -522,12 +491,9 @@
   <xs:complexType name="AtTimeTriggerType">
     <xs:complexContent>
       <xs:extension base="x:TriggerType">
-        <xs:attribute name="time" type="xs:dateTime" use="optional">
-          <xs:annotation><xs:documentation>Instant absolu.</xs:documentation></xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="delay" type="xs:duration" use="optional">
-          <xs:annotation><xs:documentation>Délai relatif (début de scénario pour une activation, début de la tâche pour une sortie).
-            Exactement un de time ou delay doit être renseigné.</xs:documentation></xs:annotation>
+        <xs:attribute name="delay" type="xs:duration" use="required">
+          <xs:annotation><xs:documentation>Délai relatif (ordre reçu pour une activation, début de la tâche pour une sortie).
+            Un archétype ne porte pas d'instant absolu.</xs:documentation></xs:annotation>
         </xs:attribute>
       </xs:extension>
     </xs:complexContent>
@@ -763,10 +729,11 @@
 
   <xs:complexType name="KinematicDefinitionType">
     <xs:annotation>
-      <xs:documentation>Définition d'équipement cinématique. Toute cinématique fournit au minimum, en données
-        d'initialisation, une position et une orientation (portées par l'élément Kinematic de l'entité).
-        Les dérivées (ex. FixedWingKinematic, base="Kinematic") ajoutent des données technologiques
-        et d'initialisation.</xs:documentation>
+      <xs:documentation>Définition d'équipement cinématique. La définition racine (sans @base) déclare au
+        minimum, en données d'initialisation, une position (Position) et une orientation (Orientation) ;
+        toute autre cinématique en dérive (ex. FixedWingKinematic, base="Kinematic") et ajoute des données
+        technologiques et d'initialisation. La présence de Position et Orientation dans la chaîne de
+        dérivation est vérifiée par l'outil.</xs:documentation>
     </xs:annotation>
     <xs:complexContent>
       <xs:extension base="x:DefinitionBaseType"/>
@@ -798,88 +765,18 @@
     <xs:attribute name="type" type="xs:string" use="optional"/>
   </xs:complexType>
 
-  <xs:complexType name="KinematicInitializationDataType">
-    <xs:annotation>
-      <xs:documentation>Données d'initialisation d'une cinématique : position et orientation obligatoires,
-        puis les données propres à la définition (ex. InitialSpeed).</xs:documentation>
-    </xs:annotation>
-    <xs:sequence>
-      <xs:element name="Position" type="x:PositionType"/>
-      <xs:element name="Orientation" type="x:OrientationType"/>
-      <xs:element name="Parameter" type="x:DataItemType" minOccurs="0" maxOccurs="unbounded"/>
-    </xs:sequence>
-  </xs:complexType>
-
   <xs:complexType name="KinematicType">
     <xs:annotation>
-      <xs:documentation>Équipement cinématique d'une entité (obligatoire, un seul). Il s'appuie sur une
-        définition cinématique de la bibliothèque et porte au minimum position et orientation.</xs:documentation>
+      <xs:documentation>Équipement cinématique d'un archétype d'entité (obligatoire, un seul). Il s'appuie sur
+        une définition cinématique de la bibliothèque, dont il peut surcharger les valeurs par défaut.</xs:documentation>
     </xs:annotation>
-    <xs:sequence>
-      <xs:element name="Description" type="xs:string" minOccurs="0"/>
-      <xs:element name="TechnologicalData" type="x:DataItemsType" minOccurs="0"/>
-      <xs:element name="InitializationData" type="x:KinematicInitializationDataType"/>
-      <xs:element name="Tasks" type="x:TasksType" minOccurs="0"/>
-    </xs:sequence>
+    <xs:group ref="x:EquipmentContent"/>
     <xs:attribute name="definition" type="x:IdentifierType" use="required"/>
   </xs:complexType>
 
   <!-- ================================================================== -->
   <!-- Entités                                                            -->
   <!-- ================================================================== -->
-
-  <xs:simpleType name="LatitudeType">
-    <xs:restriction base="xs:double">
-      <xs:minInclusive value="-90"/>
-      <xs:maxInclusive value="90"/>
-    </xs:restriction>
-  </xs:simpleType>
-
-  <xs:simpleType name="LongitudeType">
-    <xs:restriction base="xs:double">
-      <xs:minInclusive value="-180"/>
-      <xs:maxInclusive value="180"/>
-    </xs:restriction>
-  </xs:simpleType>
-
-  <xs:complexType name="PositionType">
-    <xs:annotation>
-      <xs:documentation>Position géodésique WGS84 : latitude et longitude en degrés décimaux, altitude en mètres.</xs:documentation>
-    </xs:annotation>
-    <xs:attribute name="latitude" type="x:LatitudeType" use="required"/>
-    <xs:attribute name="longitude" type="x:LongitudeType" use="required"/>
-    <xs:attribute name="altitude" type="xs:double" use="required"/>
-  </xs:complexType>
-
-  <xs:simpleType name="HeadingType">
-    <xs:restriction base="xs:double">
-      <xs:minInclusive value="0"/>
-      <xs:maxExclusive value="360"/>
-    </xs:restriction>
-  </xs:simpleType>
-
-  <xs:simpleType name="PitchType">
-    <xs:restriction base="xs:double">
-      <xs:minInclusive value="-90"/>
-      <xs:maxInclusive value="90"/>
-    </xs:restriction>
-  </xs:simpleType>
-
-  <xs:simpleType name="RollType">
-    <xs:restriction base="xs:double">
-      <xs:minInclusive value="-180"/>
-      <xs:maxInclusive value="180"/>
-    </xs:restriction>
-  </xs:simpleType>
-
-  <xs:complexType name="OrientationType">
-    <xs:annotation>
-      <xs:documentation>Orientation en degrés : cap [0, 360[, tangage [-90, 90], roulis [-180, 180].</xs:documentation>
-    </xs:annotation>
-    <xs:attribute name="heading" type="x:HeadingType" use="required"/>
-    <xs:attribute name="pitch" type="x:PitchType" use="required"/>
-    <xs:attribute name="roll" type="x:RollType" use="required"/>
-  </xs:complexType>
 
   <xs:simpleType name="DisEntityTypeType">
     <xs:annotation>
@@ -908,13 +805,13 @@
 
   <xs:complexType name="EntityType">
     <xs:annotation>
-      <xs:documentation>Entité : conteneur d'équipements, identifiée par un nom unique. Sa position et son
-        orientation sont les données d'initialisation de son équipement cinématique, obligatoire.</xs:documentation>
+      <xs:documentation>Archétype d'entité (plateforme) : conteneur d'équipements, identifié par un nom unique,
+        avec un équipement cinématique obligatoire.</xs:documentation>
     </xs:annotation>
     <xs:sequence>
       <xs:element name="Description" type="xs:string" minOccurs="0"/>
       <xs:element name="Kinematic" type="x:KinematicType"/>
-      <xs:element name="Parameters" type="x:ParametersType" minOccurs="0"/>
+      <xs:element name="Parameters" type="x:DataItemsType" minOccurs="0"/>
       <xs:element name="Equipments" minOccurs="0">
         <xs:complexType>
           <xs:sequence>
@@ -957,20 +854,41 @@
 
   <xs:complexType name="EntityRefType">
     <xs:attribute name="entity" type="x:IdentifierType" use="required">
-      <xs:annotation><xs:documentation>Nom d'une entité déclarée dans Entities.</xs:documentation></xs:annotation>
+      <xs:annotation><xs:documentation>Nom d'un archétype d'entité déclaré dans Entities.</xs:documentation></xs:annotation>
     </xs:attribute>
+    <xs:attribute name="count" type="xs:positiveInteger" use="optional" default="1">
+      <xs:annotation><xs:documentation>Nombre d'entités de cet archétype dans l'unité.</xs:documentation></xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="role" type="xs:string" use="optional">
+      <xs:annotation><xs:documentation>Rôle dans l'unité (ex. Chef, Ailier).</xs:documentation></xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <xs:complexType name="UnitRefType">
+    <xs:attribute name="unit" type="x:IdentifierType" use="required">
+      <xs:annotation><xs:documentation>Nom d'un archétype d'unité déclaré dans Units.</xs:documentation></xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="count" type="xs:positiveInteger" use="optional" default="1">
+      <xs:annotation><xs:documentation>Nombre de sous-unités de cet archétype.</xs:documentation></xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="role" type="xs:string" use="optional"/>
   </xs:complexType>
 
   <xs:complexType name="UnitType">
     <xs:annotation>
-      <xs:documentation>Unité : groupe d'entités (référencées par leur nom), pouvant contenir des sous-unités.</xs:documentation>
+      <xs:documentation>Archétype d'unité : composition d'archétypes d'entités (EntityRef) et d'archétypes
+        d'unités (UnitRef, sous-unités), chacun avec un effectif (count).</xs:documentation>
     </xs:annotation>
     <xs:sequence>
+      <xs:element name="Description" type="xs:string" minOccurs="0"/>
       <xs:element name="EntityRef" type="x:EntityRefType" minOccurs="0" maxOccurs="unbounded"/>
-      <xs:element name="Unit" type="x:UnitType" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="UnitRef" type="x:UnitRefType" minOccurs="0" maxOccurs="unbounded"/>
       <xs:element name="Tasks" type="x:TasksType" minOccurs="0"/>
     </xs:sequence>
     <xs:attribute name="name" type="x:IdentifierType" use="required"/>
+    <xs:attribute name="folder" type="xs:string" use="optional">
+      <xs:annotation><xs:documentation>Classement dans la bibliothèque, segments séparés par '/'.</xs:documentation></xs:annotation>
+    </xs:attribute>
   </xs:complexType>
 
   <xs:element name="Units" type="x:UnitsType"/>

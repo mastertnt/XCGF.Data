@@ -1,22 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Archétypes d'unités : compositions d'archétypes d'entités et d'unités. -->
 <Units xmlns="urn:xcgf:data:1.0">
-  <Unit name="Groupement_A">
-    <EntityRef entity="Tigre_01"/>
-    <EntityRef entity="Rafale_01"/>
-    <Unit name="Patrouille_1">
-      <EntityRef entity="VBL_01"/>
-      <EntityRef entity="VBL_02"/>
-      <Tasks>
-        <TaskRef task="Patrol">
-          <Parameter name="Route" dataType="WaypointList"><Value>48.71,2.20,160 48.72,2.21,165 48.73,2.20,170</Value></Parameter>
-        </TaskRef>
-      </Tasks>
-    </Unit>
+
+  <Unit name="Patrouille_VBL" folder="Land">
+    <Description>Patrouille de deux VBL.</Description>
+    <EntityRef entity="VBL" role="Chef"/>
+    <EntityRef entity="VBL" role="Equipier"/>
     <Tasks>
-      <TaskRef task="Reconnaissance">
-        <Parameter name="ReportTo" dataType="UnitReference"><Ref unit="Patrouille_1"/></Parameter>
-        <Parameter name="Sensor" dataType="EquipmentReference"><Ref entity="Tigre_01" equipment="Radar"/></Parameter>
-      </TaskRef>
+      <TaskRef task="Patrol"/>
     </Tasks>
   </Unit>
+
+  <Unit name="Groupement_Reco" folder="Joint">
+    <Description>Deux patrouilles VBL appuyées par un Tigre et un Rafale.</Description>
+    <EntityRef entity="Tigre"/>
+    <EntityRef entity="Rafale"/>
+    <UnitRef unit="Patrouille_VBL" count="2"/>
+    <Tasks>
+      <TaskRef task="Reconnaissance"/>
+    </Tasks>
+  </Unit>
+
 </Units>
