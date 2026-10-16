@@ -19,6 +19,10 @@
         </Constraints>
       </Parameter>
     </What>
+    <When>
+      <!-- Output: time actually spent reaching the destination. -->
+      <Parameter name="TravelTime" dataType="DurationSeconds" direction="Out"/>
+    </When>
     <Where>
       <!-- 2D point: altitude is ignored. -->
       <Parameter name="Destination" dataType="GeoPoint2D" required="true"/>
@@ -50,6 +54,8 @@
     <What>
       <!-- Means used: an equipment of the performer. -->
       <Parameter name="Weapon" dataType="EquipmentReference"/>
+      <!-- Output: number of missiles actually fired. -->
+      <Parameter name="ShotsFired" dataType="Count" direction="Out"/>
       <Parameter name="Salvo" dataType="Count">
         <DefaultValue>1</DefaultValue>
         <Constraints>
@@ -84,6 +90,13 @@
     </What>
     <Where>
       <Parameter name="Plan" dataType="FlightPlan" required="true"/>
+      <!-- Input/output: starting waypoint, updated as the plan is flown. -->
+      <Parameter name="CurrentWaypoint" dataType="Count" direction="InOut">
+        <DefaultValue>0</DefaultValue>
+        <Constraints>
+          <Min value="0"/>
+        </Constraints>
+      </Parameter>
     </Where>
     <ActivationTrigger>
       <OnTaskEnd task="MoveTo" outcome="Success"/>

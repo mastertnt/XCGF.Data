@@ -8,6 +8,7 @@
   <SimpleData name="AngleDegrees" representation="HLAfloat64BE" units="deg" resolution="0.01" accuracy="0.01"/>
   <SimpleData name="DistanceMeters" representation="HLAfloat64BE" units="m" resolution="0.1" accuracy="1"/>
   <SimpleData name="SpeedMetersPerSecond" representation="HLAfloat64BE" units="m/s" resolution="0.01" accuracy="0.1"/>
+  <SimpleData name="DurationSeconds" representation="HLAfloat64BE" units="s" resolution="1" accuracy="1"/>
   <SimpleData name="Count" representation="HLAinteger32BE" units="NA"/>
 
   <EnumeratedData name="HLAboolean" representation="HLAinteger32BE">

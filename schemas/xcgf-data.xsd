@@ -458,7 +458,20 @@
     </xs:sequence>
     <xs:attribute name="name" type="x:IdentifierType" use="required"/>
     <xs:attribute name="dataType" type="x:IdentifierType" use="required"/>
+    <xs:attribute name="direction" type="x:DirectionType" use="optional" default="In"/>
   </xs:complexType>
+
+  <xs:simpleType name="DirectionType">
+    <xs:annotation>
+      <xs:documentation>Direction of a data item: In (set before execution, default), Out (produced by the
+        task or equipment) or InOut (set before execution and updated by it).</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="In"/>
+      <xs:enumeration value="Out"/>
+      <xs:enumeration value="InOut"/>
+    </xs:restriction>
+  </xs:simpleType>
 
   <xs:complexType name="DataItemsType">
     <xs:sequence>
