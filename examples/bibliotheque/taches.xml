@@ -21,7 +21,7 @@
     </WhoAffected>
     <What>
       <Parameter name="Speed" dataType="SpeedMetersPerSecond" required="false">
-        <Value>10</Value>
+        <DefaultValue>10</DefaultValue>
         <Constraints>
           <Min value="0" inclusive="false"/>
         </Constraints>
@@ -40,7 +40,7 @@
       <Parameter name="MaxDuration" dataType="DurationSeconds" required="false"/>
     </When>
     <Where>
-      <Parameter name="Destination" dataType="WaypointStruct" required="true"/>
+      <Parameter name="Destination" dataType="GeoPosition" required="true"/>
       <Parameter name="Route" dataType="WaypointList" required="false"/>
     </Where>
     <Why>
@@ -67,7 +67,7 @@
       <Parameter name="Executor" dataType="EntityReference"/>
     </WhoTaskee>
     <When>
-      <Parameter name="Duration" dataType="DurationSeconds"><Value>7200</Value></Parameter>
+      <Parameter name="Duration" dataType="DurationSeconds"><DefaultValue>7200</DefaultValue></Parameter>
     </When>
     <Where>
       <Parameter name="Route" dataType="WaypointList" required="true"/>
@@ -98,7 +98,7 @@
       <Parameter name="Area" dataType="WaypointList" required="true"/>
     </Where>
     <ActivationTrigger>
-      <AtTime time="2026-10-15T09:00:00Z"/>
+      <AtTime delay="PT10M"/>
     </ActivationTrigger>
     <ExitTriggers>
       <ExitTrigger>

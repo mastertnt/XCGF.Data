@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Bibliothèque XCGF découpée en fichiers, assemblée par XInclude.
+  Bibliothèque d'archétypes XCGF découpée en fichiers, assemblée par XInclude.
   Validation du tout (références comprises) :
     xmllint -xinclude -noout -schema ../../schemas/xcgf-data.xsd bibliotheque.xml
   Chaque fichier inclus est aussi validable seul (structure et valeurs).
@@ -12,10 +12,9 @@
   <xi:include href="equipements.xml"/>
   <xi:include href="taches.xml"/>
   <Entities>
-    <xi:include href="entites/VBL_01.xml"/>
-    <xi:include href="entites/VBL_02.xml"/>
-    <xi:include href="entites/Tigre_01.xml"/>
-    <xi:include href="entites/Rafale_01.xml"/>
+    <xi:include href="entites/VBL.xml"/>
+    <xi:include href="entites/Tigre.xml"/>
+    <xi:include href="entites/Rafale.xml"/>
   </Entities>
   <xi:include href="unites.xml"/>
 </XcgfData>

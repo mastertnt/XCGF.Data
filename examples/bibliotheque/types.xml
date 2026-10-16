@@ -21,20 +21,30 @@
   <ArrayData name="HLAASCIIstring" dataType="HLAoctet" cardinality="Dynamic" encoding="HLAvariableArray"/>
   <ArrayData name="FrequencyList" dataType="FrequencyHz" cardinality="Dynamic" encoding="HLAvariableArray"/>
 
-  <FixedRecordData name="WaypointStruct">
-    <Field name="Latitude" dataType="HLAfloat64BE"/>
-    <Field name="Longitude" dataType="HLAfloat64BE"/>
+  <SimpleData name="AngleDegrees" representation="HLAfloat64BE" units="deg" resolution="0.01" accuracy="0.01"/>
+
+  <FixedRecordData name="GeoPosition">
+    <Semantics>Position géodésique WGS84.</Semantics>
+    <Field name="Latitude" dataType="AngleDegrees"/>
+    <Field name="Longitude" dataType="AngleDegrees"/>
     <Field name="Altitude" dataType="RangeMeters"/>
   </FixedRecordData>
 
-  <ArrayData name="WaypointList" dataType="WaypointStruct" cardinality="1..64" encoding="HLAvariableArray"/>
+  <FixedRecordData name="Orientation">
+    <Semantics>Cap [0, 360[, tangage [-90, 90], roulis [-180, 180], en degrés.</Semantics>
+    <Field name="Heading" dataType="AngleDegrees"/>
+    <Field name="Pitch" dataType="AngleDegrees"/>
+    <Field name="Roll" dataType="AngleDegrees"/>
+  </FixedRecordData>
+
+  <ArrayData name="WaypointList" dataType="GeoPosition" cardinality="1..64" encoding="HLAvariableArray"/>
 
   <VariantRecordData name="RadarSettings" discriminant="Mode" dataType="RadarModeEnum">
     <Alternative enumerator="Search" name="SearchRange" dataType="RangeMeters"/>
     <Alternative enumerator="Track" name="TrackId" dataType="HLAinteger32BE"/>
   </VariantRecordData>
 
-  <!-- Références à des instances (extension XCGF). -->
+  <!-- Références à des instances (extension XCGF) : l'archétype déclare la donnée, l'instance visée est choisie au scénario. -->
   <ReferenceData name="UnitReference" target="Unit"/>
   <ReferenceData name="EntityReference" target="Entity"/>
   <ReferenceData name="EquipmentReference" target="Equipment"/>

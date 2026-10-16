@@ -4,20 +4,24 @@
 
   <!-- Cinématiques ======================================================= -->
 
-  <!-- Cinématique de base : position et orientation, portées par chaque entité. -->
+  <!-- Cinématique racine : toute cinématique en dérive et hérite de Position et Orientation. -->
   <KinematicDefinition name="Kinematic">
     <Description>Cinématique de base : position et orientation.</Description>
+    <InitializationData>
+      <Parameter name="Position" dataType="GeoPosition"/>
+      <Parameter name="Orientation" dataType="Orientation"/>
+    </InitializationData>
   </KinematicDefinition>
 
   <KinematicDefinition name="GroundKinematic" base="Kinematic">
     <TechnologicalData>
-      <Parameter name="MinSpeed" dataType="SpeedMetersPerSecond"><Value>-5</Value></Parameter>
-      <Parameter name="MaxSpeed" dataType="SpeedMetersPerSecond"><Value>27.7</Value></Parameter>
+      <Parameter name="MinSpeed" dataType="SpeedMetersPerSecond"><DefaultValue>-5</DefaultValue></Parameter>
+      <Parameter name="MaxSpeed" dataType="SpeedMetersPerSecond"><DefaultValue>27.7</DefaultValue></Parameter>
     </TechnologicalData>
     <InitializationData>
       <!-- Vitesse initiale : Min sur MinSpeed, Max sur MaxSpeed. -->
       <Parameter name="InitialSpeed" dataType="SpeedMetersPerSecond">
-        <Value>0</Value>
+        <DefaultValue>0</DefaultValue>
         <Constraints>
           <Min ref="MinSpeed"/>
           <Max ref="MaxSpeed"/>
@@ -32,13 +36,13 @@
 
   <KinematicDefinition name="FixedWingKinematic" base="Kinematic">
     <TechnologicalData>
-      <Parameter name="StallSpeed" dataType="SpeedMetersPerSecond"><Value>60</Value></Parameter>
-      <Parameter name="MaxSpeed" dataType="SpeedMetersPerSecond"><Value>600</Value></Parameter>
-      <Parameter name="Ceiling" dataType="RangeMeters"><Value>15000</Value></Parameter>
+      <Parameter name="StallSpeed" dataType="SpeedMetersPerSecond"><DefaultValue>60</DefaultValue></Parameter>
+      <Parameter name="MaxSpeed" dataType="SpeedMetersPerSecond"><DefaultValue>600</DefaultValue></Parameter>
+      <Parameter name="Ceiling" dataType="RangeMeters"><DefaultValue>15000</DefaultValue></Parameter>
     </TechnologicalData>
     <InitializationData>
       <Parameter name="InitialSpeed" dataType="SpeedMetersPerSecond">
-        <Value>200</Value>
+        <DefaultValue>200</DefaultValue>
         <Constraints>
           <Min ref="StallSpeed"/>
           <Max ref="MaxSpeed"/>
@@ -49,11 +53,11 @@
 
   <KinematicDefinition name="RotaryWingKinematic" base="Kinematic">
     <TechnologicalData>
-      <Parameter name="MaxSpeed" dataType="SpeedMetersPerSecond"><Value>80</Value></Parameter>
+      <Parameter name="MaxSpeed" dataType="SpeedMetersPerSecond"><DefaultValue>80</DefaultValue></Parameter>
     </TechnologicalData>
     <InitializationData>
       <Parameter name="InitialSpeed" dataType="SpeedMetersPerSecond">
-        <Value>0</Value>
+        <DefaultValue>0</DefaultValue>
         <Constraints>
           <Min value="0"/>
           <Max ref="MaxSpeed"/>
@@ -67,10 +71,10 @@
   <EquipmentDefinition name="PR4G" type="Radio">
     <Description>Poste radio VHF.</Description>
     <TechnologicalData>
-      <Parameter name="MinFrequency" dataType="FrequencyHz"><Value>30000000</Value></Parameter>
-      <Parameter name="MaxFrequency" dataType="FrequencyHz"><Value>87975000</Value></Parameter>
+      <Parameter name="MinFrequency" dataType="FrequencyHz"><DefaultValue>30000000</DefaultValue></Parameter>
+      <Parameter name="MaxFrequency" dataType="FrequencyHz"><DefaultValue>87975000</DefaultValue></Parameter>
       <Parameter name="MaxRange" dataType="RangeMeters">
-        <Value>8000</Value>
+        <DefaultValue>8000</DefaultValue>
         <Constraints>
           <Min value="0" inclusive="false"/>
         </Constraints>
@@ -79,7 +83,7 @@
     <InitializationData>
       <!-- Fréquence active bornée par les données technologiques. -->
       <Parameter name="ActiveFrequency" dataType="FrequencyHz">
-        <Value>30000000</Value>
+        <DefaultValue>30000000</DefaultValue>
         <Constraints>
           <Min ref="MinFrequency"/>
           <Max ref="MaxFrequency"/>
@@ -99,14 +103,14 @@
   <!-- Dérivée de PR4G : hérite de tout et surcharge la portée. -->
   <EquipmentDefinition name="PR4G_Vehicule" base="PR4G">
     <TechnologicalData>
-      <Parameter name="MaxRange" dataType="RangeMeters"><Value>12000</Value></Parameter>
+      <Parameter name="MaxRange" dataType="RangeMeters"><DefaultValue>12000</DefaultValue></Parameter>
     </TechnologicalData>
   </EquipmentDefinition>
 
   <EquipmentDefinition name="RDR_Tigre" type="Radar">
     <TechnologicalData>
       <Parameter name="MaxRange" dataType="RangeMeters">
-        <Value>20000</Value>
+        <DefaultValue>20000</DefaultValue>
         <Constraints>
           <ListOfValues>
             <Value>10000</Value>
@@ -117,9 +121,9 @@
       </Parameter>
     </TechnologicalData>
     <InitializationData>
-      <Parameter name="Mode" dataType="RadarModeEnum"><Value>Search</Value></Parameter>
+      <Parameter name="Mode" dataType="RadarModeEnum"><DefaultValue>Search</DefaultValue></Parameter>
       <Parameter name="Settings" dataType="RadarSettings">
-        <Value>Search:8000</Value>
+        <DefaultValue>Search:8000</DefaultValue>
         <Constraints>
           <Max ref="MaxRange"/>
         </Constraints>
