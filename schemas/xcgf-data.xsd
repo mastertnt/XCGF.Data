@@ -458,13 +458,12 @@
     </xs:sequence>
     <xs:attribute name="name" type="x:IdentifierType" use="required"/>
     <xs:attribute name="dataType" type="x:IdentifierType" use="required"/>
-    <xs:attribute name="direction" type="x:DirectionType" use="optional" default="In"/>
   </xs:complexType>
 
   <xs:simpleType name="DirectionType">
     <xs:annotation>
-      <xs:documentation>Direction of a data item: In (set before execution, default), Out (produced by the
-        task or equipment) or InOut (set before execution and updated by it).</xs:documentation>
+      <xs:documentation>Direction of a task parameter: In (set before execution, default), Out (produced
+        by the task) or InOut (set before execution and updated by it).</xs:documentation>
     </xs:annotation>
     <xs:restriction base="xs:string">
       <xs:enumeration value="In"/>
@@ -599,11 +598,13 @@
 
   <xs:complexType name="TaskParameterType">
     <xs:annotation>
-      <xs:documentation>Parameter declared by a task definition: type, optional default value, constraints.</xs:documentation>
+      <xs:documentation>Parameter declared by a task definition: type, optional default value, constraints,
+        whether it is required and its direction (only task parameters have a direction).</xs:documentation>
     </xs:annotation>
     <xs:complexContent>
       <xs:extension base="x:DataItemType">
         <xs:attribute name="required" type="xs:boolean" use="optional" default="false"/>
+        <xs:attribute name="direction" type="x:DirectionType" use="optional" default="In"/>
       </xs:extension>
     </xs:complexContent>
   </xs:complexType>
