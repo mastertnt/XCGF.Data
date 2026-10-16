@@ -1,33 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  XCGF.Data : schéma de description des archétypes XCGF.
+  XCGF.Data: schema describing XCGF archetypes.
 
-  Le schéma ne décrit que des archétypes (types d'entités, d'équipements, d'unités, de tâches),
-  jamais des instances : pas de position effective, pas de référence à une instance concrète.
-  Toute valeur portée par une donnée est donc une valeur par défaut (DefaultValue), que
-  l'instanciation (scénario) pourra remplacer.
+  The schema only describes archetypes (entity, equipment, unit and task types), never
+  instances: no actual position, no reference to a concrete instance. Any value carried by
+  a data item is therefore a default value (DefaultValue) that instantiation (the scenario)
+  may override.
 
-  Le document décrit :
-    - des types de données, sur le modèle de l'OMT HLA (IEEE 1516-2010) ;
-    - une bibliothèque d'équipements (définitions réutilisables) ;
-    - des archétypes d'entités (type DIS, nom unique), conteneurs d'équipements, avec un équipement
-      cinématique obligatoire dont la définition déclare au minimum position et orientation ; les
-      définitions peuvent dériver les unes des autres.
-      Un équipement d'entité n'existe qu'à l'intérieur de celle-ci ; il peut s'appuyer
-      sur une définition de la bibliothèque ;
-    - des archétypes d'unités, compositions d'archétypes d'entités (et de sous-unités) ;
-    - une bibliothèque de tâches (paramètres 5W optionnels, trigger d'activation, triggers de
-      sortie), référencées par les équipements, les entités et les unités.
+  The document describes:
+    - data types, modelled on the HLA OMT (IEEE 1516-2010);
+    - an equipment library (reusable definitions);
+    - entity archetypes (DIS type, unique name), containers of equipments, with a mandatory
+      kinematic equipment whose definition declares at least a position and an orientation;
+      definitions may derive from one another.
+      An entity equipment only exists inside its entity; it may rely on a library definition;
+    - unit archetypes, compositions of entity archetypes (and of sub-units);
+    - a task library (optional 5W parameters, an activation trigger, exit triggers),
+      referenced by equipments, entities and units.
 
-  Découpage en fichiers : DataTypes, EquipmentLibrary, TaskLibrary, Entities, Entity et Units sont des
-  éléments globaux, donc chacun peut être la racine d'un fichier validable seul. Un document
-  XcgfData les assemble par XInclude (xi:include) ; toutes les contraintes de référence
-  (types, définitions d'équipements, entités) sont vérifiées sur le document assemblé :
+  Splitting into files: DataTypes, EquipmentLibrary, TaskLibrary, Entities, Entity and Units are
+  global elements, so each one can be the root of a file that validates on its own. An XcgfData
+  document assembles them with XInclude (xi:include); every reference constraint (types,
+  equipment definitions, entities) is checked on the assembled document:
     xmllint -xinclude -noout -schema schemas/xcgf-data.xsd examples/bibliotheque/bibliotheque.xml
 
-  Extensibilité des contraintes : toute contrainte est un élément du groupe de substitution
-  x:Constraint. Un schéma tiers peut en ajouter en dérivant x:ConstraintType ; CustomConstraint
-  couvre les besoins ponctuels sans nouveau schéma. Les triggers suivent le même principe (x:Trigger).
+  Extensible constraints: every constraint is an element of the x:Constraint substitution
+  group. A third-party schema can add new ones by deriving x:ConstraintType; CustomConstraint
+  covers one-off needs without a new schema. Triggers follow the same principle (x:Trigger).
 -->
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
            xmlns:x="urn:xcgf:data:1.0"
@@ -37,13 +36,13 @@
            version="1.0">
 
   <!-- ================================================================== -->
-  <!-- Racine                                                             -->
+  <!-- Root                                                               -->
   <!-- ================================================================== -->
 
   <xs:element name="XcgfData">
     <xs:annotation>
-      <xs:documentation>Racine d'un document XCGF. Les sections peuvent apparaître plusieurs fois et
-        dans un ordre quelconque, ce qui permet d'assembler une bibliothèque découpée en fichiers.</xs:documentation>
+      <xs:documentation>Root of an XCGF document. Sections may appear several times and in any order,
+        which allows assembling a library split into several files.</xs:documentation>
     </xs:annotation>
     <xs:complexType>
       <xs:choice minOccurs="0" maxOccurs="unbounded">
@@ -56,25 +55,25 @@
       <xs:attribute name="version" type="xs:string" use="optional"/>
     </xs:complexType>
 
-    <!-- Noms de types de données : uniques toutes catégories confondues. -->
+    <!-- Data type names: unique across all categories. -->
     <xs:key name="DataTypeKey">
       <xs:selector xpath="x:DataTypes/x:BasicData|x:DataTypes/x:SimpleData|x:DataTypes/x:EnumeratedData|x:DataTypes/x:ArrayData|x:DataTypes/x:FixedRecordData|x:DataTypes/x:VariantRecordData|x:DataTypes/x:ReferenceData"/>
       <xs:field xpath="@name"/>
     </xs:key>
 
-    <!-- Représentations de base (cibles de @representation). -->
+    <!-- Basic data representations (targets of @representation). -->
     <xs:key name="BasicDataKey">
       <xs:selector xpath="x:DataTypes/x:BasicData"/>
       <xs:field xpath="@name"/>
     </xs:key>
 
-    <!-- Types énumérés (cibles du discriminant d'un enregistrement variant). -->
+    <!-- Enumerated types (targets of a variant record discriminant). -->
     <xs:key name="EnumeratedDataKey">
       <xs:selector xpath="x:DataTypes/x:EnumeratedData"/>
       <xs:field xpath="@name"/>
     </xs:key>
 
-    <!-- Toute référence @dataType doit désigner un type déclaré. -->
+    <!-- Every @dataType reference must name a declared type. -->
     <xs:keyref name="DataTypeRef" refer="x:DataTypeKey">
       <xs:selector xpath="x:DataTypes/x:ArrayData|.//x:Field|.//x:Alternative|.//x:Parameter"/>
       <xs:field xpath="@dataType"/>
@@ -90,7 +89,7 @@
       <xs:field xpath="@dataType"/>
     </xs:keyref>
 
-    <!-- Nom de définition d'équipement unique dans la bibliothèque. -->
+    <!-- Equipment definition name unique in the library. -->
     <xs:unique name="EquipmentLibraryNameUnique">
       <xs:selector xpath="x:EquipmentLibrary/x:EquipmentDefinition|x:EquipmentLibrary/x:KinematicDefinition"/>
       <xs:field xpath="@name"/>
@@ -106,7 +105,7 @@
       <xs:field xpath="@name"/>
     </xs:key>
 
-    <!-- Une définition ne dérive que d'une définition de même nature. -->
+    <!-- A definition only derives from a definition of the same kind. -->
     <xs:keyref name="EquipmentDefinitionBaseRef" refer="x:EquipmentDefinitionKey">
       <xs:selector xpath="x:EquipmentLibrary/x:EquipmentDefinition"/>
       <xs:field xpath="@base"/>
@@ -117,49 +116,49 @@
       <xs:field xpath="@base"/>
     </xs:keyref>
 
-    <!-- La cinématique d'une entité s'appuie sur une définition cinématique. -->
+    <!-- An entity's kinematic relies on a kinematic definition. -->
     <xs:keyref name="KinematicDefinitionRef" refer="x:KinematicDefinitionKey">
       <xs:selector xpath="x:Entities/x:Entity/x:Kinematic"/>
       <xs:field xpath="@definition"/>
     </xs:keyref>
 
-    <!-- Un équipement d'entité ne peut s'appuyer que sur une définition existante. -->
+    <!-- An entity equipment can only rely on an existing definition. -->
     <xs:keyref name="EquipmentDefinitionRef" refer="x:EquipmentDefinitionKey">
       <xs:selector xpath="x:Entities/x:Entity/x:Equipments/x:Equipment"/>
       <xs:field xpath="@definition"/>
     </xs:keyref>
 
-    <!-- Nom d'entité unique parmi l'ensemble des entités du document. -->
+    <!-- Entity name unique across all entities of the document. -->
     <xs:key name="EntityNameKey">
       <xs:selector xpath="x:Entities/x:Entity"/>
       <xs:field xpath="@name"/>
     </xs:key>
 
-    <!-- Nom d'archétype d'unité unique. -->
+    <!-- Unit archetype name unique. -->
     <xs:key name="UnitNameKey">
       <xs:selector xpath="x:Units/x:Unit"/>
       <xs:field xpath="@name"/>
     </xs:key>
 
-    <!-- Nom de définition de tâche unique dans la bibliothèque. -->
+    <!-- Task definition name unique in the library. -->
     <xs:key name="TaskDefinitionKey">
       <xs:selector xpath="x:TaskLibrary/x:TaskDefinition"/>
       <xs:field xpath="@name"/>
     </xs:key>
 
-    <!-- Équipements, entités et unités ne référencent que des tâches définies. -->
+    <!-- Equipments, entities and units only reference defined tasks. -->
     <xs:keyref name="TaskRef" refer="x:TaskDefinitionKey">
       <xs:selector xpath=".//x:TaskRef"/>
       <xs:field xpath="@task"/>
     </xs:keyref>
 
-    <!-- Une sous-unité désigne un archétype d'unité existant (les cycles sont détectés par l'outil). -->
+    <!-- A sub-unit names an existing unit archetype (cycles are detected by the tool). -->
     <xs:keyref name="UnitUnitRef" refer="x:UnitNameKey">
       <xs:selector xpath=".//x:UnitRef"/>
       <xs:field xpath="@unit"/>
     </xs:keyref>
 
-    <!-- Une unité ne peut référencer qu'un archétype d'entité existant. -->
+    <!-- A unit can only reference an existing entity archetype. -->
     <xs:keyref name="UnitEntityRef" refer="x:EntityNameKey">
       <xs:selector xpath=".//x:EntityRef"/>
       <xs:field xpath="@entity"/>
@@ -167,12 +166,12 @@
   </xs:element>
 
   <!-- ================================================================== -->
-  <!-- Types simples communs                                              -->
+  <!-- Common simple types                                                -->
   <!-- ================================================================== -->
 
   <xs:simpleType name="IdentifierType">
     <xs:annotation>
-      <xs:documentation>Identifiant : lettre ou '_' puis lettres, chiffres, '_', '-' ou '.'.</xs:documentation>
+      <xs:documentation>Identifier: a letter or '_' followed by letters, digits, '_', '-' or '.'.</xs:documentation>
     </xs:annotation>
     <xs:restriction base="xs:string">
       <xs:pattern value="[A-Za-z_][A-Za-z0-9_.\-]*"/>
@@ -188,7 +187,7 @@
 
   <xs:simpleType name="CardinalityType">
     <xs:annotation>
-      <xs:documentation>Cardinalité HLA : entier, plage "min..max" ou "Dynamic".</xs:documentation>
+      <xs:documentation>HLA cardinality: an integer, a "min..max" range or "Dynamic".</xs:documentation>
     </xs:annotation>
     <xs:restriction base="xs:string">
       <xs:pattern value="Dynamic|[0-9]+|[0-9]+\.\.[0-9]+"/>
@@ -196,10 +195,10 @@
   </xs:simpleType>
 
   <!-- ================================================================== -->
-  <!-- Types de données (OMT HLA 1516-2010)                               -->
+  <!-- Data types (HLA OMT 1516-2010)                                     -->
   <!-- ================================================================== -->
 
-  <!-- Attributs xml:* (notamment xml:base, ajouté par XInclude) sur les racines de fichier. -->
+  <!-- xml:* attributes (notably xml:base, added by XInclude) on file roots. -->
   <xs:attributeGroup name="FileRootAttributes">
     <xs:anyAttribute namespace="http://www.w3.org/XML/1998/namespace" processContents="skip"/>
   </xs:attributeGroup>
@@ -208,7 +207,7 @@
 
   <xs:complexType name="DataTypesType">
     <xs:annotation>
-      <xs:documentation>Déclarations de types, dans un ordre quelconque.</xs:documentation>
+      <xs:documentation>Type declarations, in any order.</xs:documentation>
     </xs:annotation>
     <xs:choice minOccurs="0" maxOccurs="unbounded">
       <xs:element name="BasicData" type="x:BasicDataType"/>
@@ -231,12 +230,12 @@
 
   <xs:complexType name="BasicDataType">
     <xs:annotation>
-      <xs:documentation>Représentation binaire de base (ex. HLAinteger32BE, HLAfloat64LE).</xs:documentation>
+      <xs:documentation>Basic binary representation (e.g. HLAinteger32BE, HLAfloat64LE).</xs:documentation>
     </xs:annotation>
     <xs:complexContent>
       <xs:extension base="x:DataTypeBase">
         <xs:attribute name="size" type="xs:positiveInteger" use="required">
-          <xs:annotation><xs:documentation>Taille en bits.</xs:documentation></xs:annotation>
+          <xs:annotation><xs:documentation>Size in bits.</xs:documentation></xs:annotation>
         </xs:attribute>
         <xs:attribute name="interpretation" type="xs:string" use="optional"/>
         <xs:attribute name="endian" type="x:EndianType" use="required"/>
@@ -247,7 +246,7 @@
 
   <xs:complexType name="SimpleDataType">
     <xs:annotation>
-      <xs:documentation>Type scalaire défini sur une représentation de base, avec unité et précision.</xs:documentation>
+      <xs:documentation>Scalar type defined on a basic representation, with units and precision.</xs:documentation>
     </xs:annotation>
     <xs:complexContent>
       <xs:extension base="x:DataTypeBase">
@@ -279,11 +278,11 @@
     <xs:complexContent>
       <xs:extension base="x:DataTypeBase">
         <xs:attribute name="dataType" type="x:IdentifierType" use="required">
-          <xs:annotation><xs:documentation>Type des éléments.</xs:documentation></xs:annotation>
+          <xs:annotation><xs:documentation>Element type.</xs:documentation></xs:annotation>
         </xs:attribute>
         <xs:attribute name="cardinality" type="x:CardinalityType" use="required"/>
         <xs:attribute name="encoding" type="xs:string" use="required">
-          <xs:annotation><xs:documentation>Ex. HLAfixedArray, HLAvariableArray.</xs:documentation></xs:annotation>
+          <xs:annotation><xs:documentation>E.g. HLAfixedArray, HLAvariableArray.</xs:documentation></xs:annotation>
         </xs:attribute>
       </xs:extension>
     </xs:complexContent>
@@ -317,7 +316,7 @@
               <xs:complexContent>
                 <xs:extension base="x:FieldType">
                   <xs:attribute name="enumerator" type="xs:string" use="required">
-                    <xs:annotation><xs:documentation>Valeur(s) du discriminant sélectionnant cette alternative (liste séparée par des virgules, ou HLAother).</xs:documentation></xs:annotation>
+                    <xs:annotation><xs:documentation>Discriminant value(s) selecting this alternative (comma-separated list, or HLAother).</xs:documentation></xs:annotation>
                   </xs:attribute>
                 </xs:extension>
               </xs:complexContent>
@@ -326,7 +325,7 @@
         </xs:sequence>
         <xs:attribute name="discriminant" type="x:IdentifierType" use="required"/>
         <xs:attribute name="dataType" type="x:IdentifierType" use="required">
-          <xs:annotation><xs:documentation>Type énuméré du discriminant.</xs:documentation></xs:annotation>
+          <xs:annotation><xs:documentation>Enumerated type of the discriminant.</xs:documentation></xs:annotation>
         </xs:attribute>
         <xs:attribute name="encoding" type="xs:string" use="optional" default="HLAvariantRecord"/>
       </xs:extension>
@@ -343,9 +342,9 @@
 
   <xs:complexType name="ReferenceDataType">
     <xs:annotation>
-      <xs:documentation>Extension XCGF (hors OMT HLA) : référence à une instance d'unité, d'entité (plateforme)
-        ou d'équipement, jamais à un type ou à une définition. Un archétype ne fait que déclarer une donnée
-        de ce type ; l'instance visée est désignée à l'instanciation (scénario), donc sans DefaultValue ici.</xs:documentation>
+      <xs:documentation>XCGF extension (not in the HLA OMT): reference to a unit, entity (platform) or equipment
+        instance, never to a type or a definition. An archetype only declares a data item of this
+        type; the target instance is chosen at instantiation (scenario), hence no DefaultValue here.</xs:documentation>
     </xs:annotation>
     <xs:complexContent>
       <xs:extension base="x:DataTypeBase">
@@ -355,10 +354,10 @@
   </xs:complexType>
 
   <!-- ================================================================== -->
-  <!-- Paramètres et tâches                                               -->
+  <!-- Parameters and tasks                                               -->
   <!-- ================================================================== -->
 
-  <!-- Contraintes : groupe de substitution extensible -->
+  <!-- Constraints: extensible substitution group -->
 
   <xs:complexType name="ArgumentType">
     <xs:attribute name="name" type="x:IdentifierType" use="required"/>
@@ -367,8 +366,8 @@
 
   <xs:complexType name="ConstraintType" abstract="true">
     <xs:annotation>
-      <xs:documentation>Base de toute contrainte. Pour ajouter une contrainte, dériver ce type et déclarer
-        un élément avec substitutionGroup="x:Constraint" (dans ce schéma ou un schéma tiers).</xs:documentation>
+      <xs:documentation>Base of every constraint. To add a constraint, derive this type and declare an element
+        with substitutionGroup="x:Constraint" (in this schema or a third-party one).</xs:documentation>
     </xs:annotation>
   </xs:complexType>
 
@@ -378,11 +377,11 @@
     <xs:complexContent>
       <xs:extension base="x:ConstraintType">
         <xs:attribute name="value" type="xs:string" use="optional">
-          <xs:annotation><xs:documentation>Borne littérale.</xs:documentation></xs:annotation>
+          <xs:annotation><xs:documentation>Literal bound.</xs:documentation></xs:annotation>
         </xs:attribute>
         <xs:attribute name="ref" type="x:IdentifierType" use="optional">
-          <xs:annotation><xs:documentation>Borne donnée par une donnée technologique du même équipement (ex. MaxSpeed).
-            Exactement un de value ou ref doit être renseigné.</xs:documentation></xs:annotation>
+          <xs:annotation><xs:documentation>Bound given by a technological data item of the same equipment (e.g. MaxSpeed).
+            Exactly one of value or ref must be set.</xs:documentation></xs:annotation>
         </xs:attribute>
         <xs:attribute name="inclusive" type="xs:boolean" use="optional" default="true"/>
       </xs:extension>
@@ -390,11 +389,11 @@
   </xs:complexType>
 
   <xs:element name="Min" type="x:BoundConstraintType" substitutionGroup="x:Constraint">
-    <xs:annotation><xs:documentation>Borne inférieure (incluse par défaut).</xs:documentation></xs:annotation>
+    <xs:annotation><xs:documentation>Lower bound (inclusive by default).</xs:documentation></xs:annotation>
   </xs:element>
 
   <xs:element name="Max" type="x:BoundConstraintType" substitutionGroup="x:Constraint">
-    <xs:annotation><xs:documentation>Borne supérieure (incluse par défaut).</xs:documentation></xs:annotation>
+    <xs:annotation><xs:documentation>Upper bound (inclusive by default).</xs:documentation></xs:annotation>
   </xs:element>
 
   <xs:complexType name="ListOfValuesConstraintType">
@@ -408,7 +407,7 @@
   </xs:complexType>
 
   <xs:element name="ListOfValues" type="x:ListOfValuesConstraintType" substitutionGroup="x:Constraint">
-    <xs:annotation><xs:documentation>Liste fermée des valeurs autorisées.</xs:documentation></xs:annotation>
+    <xs:annotation><xs:documentation>Closed list of allowed values.</xs:documentation></xs:annotation>
   </xs:element>
 
   <xs:complexType name="PatternConstraintType">
@@ -420,7 +419,7 @@
   </xs:complexType>
 
   <xs:element name="Pattern" type="x:PatternConstraintType" substitutionGroup="x:Constraint">
-    <xs:annotation><xs:documentation>Expression régulière que la valeur textuelle doit respecter.</xs:documentation></xs:annotation>
+    <xs:annotation><xs:documentation>Regular expression the textual value must match.</xs:documentation></xs:annotation>
   </xs:element>
 
   <xs:complexType name="CustomConstraintType">
@@ -435,12 +434,12 @@
   </xs:complexType>
 
   <xs:element name="CustomConstraint" type="x:CustomConstraintType" substitutionGroup="x:Constraint">
-    <xs:annotation><xs:documentation>Contrainte libre, identifiée par kind et interprétée par l'outil (ex. Step).</xs:documentation></xs:annotation>
+    <xs:annotation><xs:documentation>Free-form constraint, identified by kind and interpreted by the tool (e.g. Step).</xs:documentation></xs:annotation>
   </xs:element>
 
   <xs:complexType name="ConstraintsType">
     <xs:annotation>
-      <xs:documentation>Contraintes cumulables sur la valeur d'une donnée d'équipement.</xs:documentation>
+      <xs:documentation>Cumulative constraints on a data item's value.</xs:documentation>
     </xs:annotation>
     <xs:sequence>
       <xs:element ref="x:Constraint" maxOccurs="unbounded"/>
@@ -449,9 +448,9 @@
 
   <xs:complexType name="DataItemType">
     <xs:annotation>
-      <xs:documentation>Donnée typée (équipement, tâche, entité) : valeur par défaut éventuelle et contraintes.
-        Dans une définition dérivée ou un usage de définition (Equipment, Kinematic, TaskRef), une donnée
-        de même nom remplace la valeur par défaut ou complète les contraintes héritées.</xs:documentation>
+      <xs:documentation>Typed data item (equipment, task, entity): optional default value and constraints.
+        In a derived definition or a use of a definition (Equipment, Kinematic, TaskRef), a data item
+        with the same name overrides the default value or adds to the inherited constraints.</xs:documentation>
     </xs:annotation>
     <xs:sequence>
       <xs:element name="DefaultValue" type="xs:string" minOccurs="0"/>
@@ -467,12 +466,12 @@
     </xs:sequence>
   </xs:complexType>
 
-  <!-- Triggers : groupe de substitution extensible -->
+  <!-- Triggers: extensible substitution group -->
 
   <xs:complexType name="TriggerType" abstract="true">
     <xs:annotation>
-      <xs:documentation>Base de tout trigger. Pour en ajouter, dériver ce type et déclarer un élément
-        avec substitutionGroup="x:Trigger" ; CustomTrigger couvre les besoins ponctuels.</xs:documentation>
+      <xs:documentation>Base of every trigger. To add one, derive this type and declare an element with
+        substitutionGroup="x:Trigger"; CustomTrigger covers one-off needs.</xs:documentation>
     </xs:annotation>
   </xs:complexType>
 
@@ -485,15 +484,15 @@
   </xs:complexType>
 
   <xs:element name="Immediate" type="x:ImmediateTriggerType" substitutionGroup="x:Trigger">
-    <xs:annotation><xs:documentation>Déclenché dès que possible (activation du porteur, ou démarrage de la tâche pour une sortie).</xs:documentation></xs:annotation>
+    <xs:annotation><xs:documentation>Fires as soon as possible (activation of the carrier, or start of the task for an exit).</xs:documentation></xs:annotation>
   </xs:element>
 
   <xs:complexType name="AtTimeTriggerType">
     <xs:complexContent>
       <xs:extension base="x:TriggerType">
         <xs:attribute name="delay" type="xs:duration" use="required">
-          <xs:annotation><xs:documentation>Délai relatif (ordre reçu pour une activation, début de la tâche pour une sortie).
-            Un archétype ne porte pas d'instant absolu.</xs:documentation></xs:annotation>
+          <xs:annotation><xs:documentation>Relative delay (order received for an activation, task start for an exit).
+            An archetype carries no absolute time.</xs:documentation></xs:annotation>
         </xs:attribute>
       </xs:extension>
     </xs:complexContent>
@@ -506,24 +505,24 @@
       <xs:extension base="x:TriggerType">
         <xs:attribute name="task" type="x:IdentifierType" use="required"/>
         <xs:attribute name="outcome" type="xs:string" use="optional">
-          <xs:annotation><xs:documentation>Issue attendue de la tâche (ex. Success) ; toute issue si absent.</xs:documentation></xs:annotation>
+          <xs:annotation><xs:documentation>Expected outcome of the task (e.g. Success); any outcome when absent.</xs:documentation></xs:annotation>
         </xs:attribute>
       </xs:extension>
     </xs:complexContent>
   </xs:complexType>
 
   <xs:element name="OnTaskEnd" type="x:OnTaskEndTriggerType" substitutionGroup="x:Trigger">
-    <xs:annotation><xs:documentation>Fin d'une autre tâche (enchaînement).</xs:documentation></xs:annotation>
+    <xs:annotation><xs:documentation>End of another task (chaining).</xs:documentation></xs:annotation>
   </xs:element>
 
   <xs:complexType name="OnPositionReachedTriggerType">
     <xs:complexContent>
       <xs:extension base="x:TriggerType">
         <xs:attribute name="parameter" type="x:IdentifierType" use="optional">
-          <xs:annotation><xs:documentation>Paramètre Where de la tâche donnant la position à atteindre (ex. Destination).</xs:documentation></xs:annotation>
+          <xs:annotation><xs:documentation>Where parameter of the task giving the position to reach (e.g. Destination).</xs:documentation></xs:annotation>
         </xs:attribute>
         <xs:attribute name="tolerance" type="xs:double" use="optional" default="0">
-          <xs:annotation><xs:documentation>Distance en mètres sous laquelle la position est considérée atteinte.</xs:documentation></xs:annotation>
+          <xs:annotation><xs:documentation>Distance in metres under which the position counts as reached.</xs:documentation></xs:annotation>
         </xs:attribute>
       </xs:extension>
     </xs:complexContent>
@@ -540,7 +539,7 @@
   </xs:complexType>
 
   <xs:element name="OnEvent" type="x:OnEventTriggerType" substitutionGroup="x:Trigger">
-    <xs:annotation><xs:documentation>Événement nommé (ex. EnemyDetected, OrderReceived).</xs:documentation></xs:annotation>
+    <xs:annotation><xs:documentation>Named event (e.g. EnemyDetected, OrderReceived).</xs:documentation></xs:annotation>
   </xs:element>
 
   <xs:complexType name="OnConditionTriggerType">
@@ -552,7 +551,7 @@
   </xs:complexType>
 
   <xs:element name="OnCondition" type="x:OnConditionTriggerType" substitutionGroup="x:Trigger">
-    <xs:annotation><xs:documentation>Condition évaluée par l'outil (ex. Fuel &lt; 0.2).</xs:documentation></xs:annotation>
+    <xs:annotation><xs:documentation>Condition evaluated by the tool (e.g. Fuel &lt; 0.2).</xs:documentation></xs:annotation>
   </xs:element>
 
   <xs:complexType name="CustomTriggerType">
@@ -579,15 +578,15 @@
       <xs:element ref="x:Trigger"/>
     </xs:sequence>
     <xs:attribute name="outcome" type="xs:string" use="optional" default="Success">
-      <xs:annotation><xs:documentation>Issue de la tâche quand ce trigger la termine (ex. Success, Failure, Aborted).</xs:documentation></xs:annotation>
+      <xs:annotation><xs:documentation>Outcome of the task when this trigger ends it (e.g. Success, Failure, Aborted).</xs:documentation></xs:annotation>
     </xs:attribute>
   </xs:complexType>
 
-  <!-- Paramètres de tâche (5W) -->
+  <!-- Task parameters (5W) -->
 
   <xs:complexType name="TaskParameterType">
     <xs:annotation>
-      <xs:documentation>Paramètre déclaré par une définition de tâche : type, valeur par défaut éventuelle, contraintes.</xs:documentation>
+      <xs:documentation>Parameter declared by a task definition: type, optional default value, constraints.</xs:documentation>
     </xs:annotation>
     <xs:complexContent>
       <xs:extension base="x:DataItemType">
@@ -602,40 +601,40 @@
     </xs:sequence>
   </xs:complexType>
 
-  <!-- Définition de tâche -->
+  <!-- Task definition -->
 
   <xs:complexType name="TaskDefinitionType">
     <xs:annotation>
-      <xs:documentation>Définition de tâche (ex. MoveTo). Ses paramètres sont rangés selon les 5W
-        (Who, What, When, Where, Why), Who étant scindé en WhoTasker, WhoTaskee et WhoAffected.
-        Les trois Who ne contiennent que des entités (ReferenceData de cible Entity) ; unités et
-        équipements se placent dans What ; WhoTaskee est obligatoire, les autres catégories sont
-        optionnelles, et chaque paramètre est optionnel (required="false" par défaut). La tâche démarre sur son trigger d'activation et se termine
-        sur le premier de ses triggers de sortie.</xs:documentation>
+      <xs:documentation>Task definition (e.g. MoveTo). Its parameters are grouped by the 5W (Who, What, When,
+        Where, Why), Who being split into WhoTasker, WhoTaskee and WhoAffected. The three Who only
+        hold entities (ReferenceData targeting Entity); units and equipments go in What. WhoTaskee
+        is mandatory, the other categories are optional, and every parameter is optional
+        (required="false" by default). The task starts on its activation trigger and ends on the
+        first of its exit triggers.</xs:documentation>
     </xs:annotation>
     <xs:sequence>
       <xs:element name="Description" type="xs:string" minOccurs="0"/>
       <xs:element name="WhoTasker" type="x:TaskParametersType" minOccurs="0">
-        <xs:annotation><xs:documentation>Qui donne l'ordre (donneur d'ordre). Optionnel.</xs:documentation></xs:annotation>
+        <xs:annotation><xs:documentation>Who gives the order (tasker). Optional.</xs:documentation></xs:annotation>
       </xs:element>
       <xs:element name="WhoTaskee" type="x:TaskParametersType">
-        <xs:annotation><xs:documentation>Qui exécute la tâche. Obligatoire dans toute définition de tâche ;
-          si la valeur n'est pas fournie, l'exécutant est le porteur de la tâche.</xs:documentation></xs:annotation>
+        <xs:annotation><xs:documentation>Who performs the task. Mandatory in every task definition; when no value is given,
+          the performer is the carrier of the task.</xs:documentation></xs:annotation>
       </xs:element>
       <xs:element name="WhoAffected" type="x:TaskParametersType" minOccurs="0">
-        <xs:annotation><xs:documentation>Qui est concerné ou impacté par la tâche (cibles, escortés, soutenus…). Optionnel.</xs:documentation></xs:annotation>
+        <xs:annotation><xs:documentation>Who is concerned or affected by the task (targets, escorted or supported entities...). Optional.</xs:documentation></xs:annotation>
       </xs:element>
       <xs:element name="What" type="x:TaskParametersType" minOccurs="0">
-        <xs:annotation><xs:documentation>Quoi : modalités de l'action (vitesse, formation…), moyens employés (équipements) et autres références (unités).</xs:documentation></xs:annotation>
+        <xs:annotation><xs:documentation>What: how the action is carried out (speed, formation...), means used (equipments) and other references (units).</xs:documentation></xs:annotation>
       </xs:element>
       <xs:element name="When" type="x:TaskParametersType" minOccurs="0">
-        <xs:annotation><xs:documentation>Quand : horaires, durée.</xs:documentation></xs:annotation>
+        <xs:annotation><xs:documentation>When: times, duration.</xs:documentation></xs:annotation>
       </xs:element>
       <xs:element name="Where" type="x:TaskParametersType" minOccurs="0">
-        <xs:annotation><xs:documentation>Où : position, itinéraire, zone.</xs:documentation></xs:annotation>
+        <xs:annotation><xs:documentation>Where: position, route, area.</xs:documentation></xs:annotation>
       </xs:element>
       <xs:element name="Why" type="x:TaskParametersType" minOccurs="0">
-        <xs:annotation><xs:documentation>Pourquoi : intention, effet recherché.</xs:documentation></xs:annotation>
+        <xs:annotation><xs:documentation>Why: intent, desired effect.</xs:documentation></xs:annotation>
       </xs:element>
       <xs:element name="ActivationTrigger" type="x:ActivationTriggerType"/>
       <xs:element name="ExitTriggers">
@@ -651,12 +650,12 @@
 
   <xs:element name="TaskLibrary">
     <xs:annotation>
-      <xs:documentation>Bibliothèque de tâches ; peut constituer un fichier à elle seule.</xs:documentation>
+      <xs:documentation>Task library; can be a file on its own.</xs:documentation>
     </xs:annotation>
     <xs:complexType>
       <xs:sequence>
         <xs:element name="TaskDefinition" type="x:TaskDefinitionType" minOccurs="0" maxOccurs="unbounded">
-          <!-- Nom de paramètre unique au sein d'une tâche, toutes catégories 5W confondues. -->
+          <!-- Parameter name unique within a task, across all 5W categories. -->
           <xs:unique name="TaskParameterNameUnique">
             <xs:selector xpath="x:WhoTasker/x:Parameter|x:WhoTaskee/x:Parameter|x:WhoAffected/x:Parameter|x:What/x:Parameter|x:When/x:Parameter|x:Where/x:Parameter|x:Why/x:Parameter"/>
             <xs:field xpath="@name"/>
@@ -667,12 +666,12 @@
     </xs:complexType>
   </xs:element>
 
-  <!-- Référence de tâche -->
+  <!-- Task reference -->
 
   <xs:complexType name="TaskRefType">
     <xs:annotation>
-      <xs:documentation>Tâche que peut réaliser son porteur (équipement, entité ou unité), par référence à une
-        définition de la TaskLibrary. Les Parameter éventuels fixent des valeurs propres au porteur.</xs:documentation>
+      <xs:documentation>Task its carrier (equipment, entity or unit) can perform, by reference to a TaskLibrary
+        definition. Optional Parameter elements set carrier-specific default values.</xs:documentation>
     </xs:annotation>
     <xs:sequence>
       <xs:element name="Parameter" type="x:DataItemType" minOccurs="0" maxOccurs="unbounded"/>
@@ -687,17 +686,17 @@
   </xs:complexType>
 
   <!-- ================================================================== -->
-  <!-- Équipements                                                        -->
+  <!-- Equipments                                                         -->
   <!-- ================================================================== -->
 
   <xs:group name="EquipmentContent">
     <xs:sequence>
       <xs:element name="Description" type="xs:string" minOccurs="0"/>
       <xs:element name="TechnologicalData" type="x:DataItemsType" minOccurs="0">
-        <xs:annotation><xs:documentation>Données technologiques : caractéristiques de l'équipement (ex. portée, bande de fréquences).</xs:documentation></xs:annotation>
+        <xs:annotation><xs:documentation>Technological data: characteristics of the equipment (e.g. range, frequency band).</xs:documentation></xs:annotation>
       </xs:element>
       <xs:element name="InitializationData" type="x:DataItemsType" minOccurs="0">
-        <xs:annotation><xs:documentation>Données d'initialisation : état initial de l'équipement (ex. mode, fréquence active).</xs:documentation></xs:annotation>
+        <xs:annotation><xs:documentation>Initialization data: initial state of the equipment (e.g. mode, active frequency).</xs:documentation></xs:annotation>
       </xs:element>
       <xs:element name="Tasks" type="x:TasksType" minOccurs="0"/>
     </xs:sequence>
@@ -705,9 +704,9 @@
 
   <xs:complexType name="DefinitionBaseType" abstract="true">
     <xs:annotation>
-      <xs:documentation>Base des définitions de la bibliothèque. Une définition peut dériver d'une autre (@base) :
-        elle hérite de toutes ses données et tâches, en ajoute et peut surcharger leurs valeurs ou
-        contraintes (fusion par nom, faite par l'outil, qui détecte aussi les cycles).</xs:documentation>
+      <xs:documentation>Base of library definitions. A definition may derive from another one (@base): it inherits
+        all its data and tasks, adds new ones and may override their values or constraints
+        (merge by name, done by the tool, which also detects cycles).</xs:documentation>
     </xs:annotation>
     <xs:group ref="x:EquipmentContent"/>
     <xs:attribute name="name" type="x:IdentifierType" use="required"/>
@@ -716,12 +715,12 @@
 
   <xs:complexType name="EquipmentDefinitionType">
     <xs:annotation>
-      <xs:documentation>Définition d'équipement de la bibliothèque, réutilisable par plusieurs entités.</xs:documentation>
+      <xs:documentation>Library equipment definition, reusable by several entities.</xs:documentation>
     </xs:annotation>
     <xs:complexContent>
       <xs:extension base="x:DefinitionBaseType">
         <xs:attribute name="type" type="xs:string" use="optional">
-          <xs:annotation><xs:documentation>Nature de l'équipement (ex. Radar, Radio, Weapon) ; hérité de @base si absent.</xs:documentation></xs:annotation>
+          <xs:annotation><xs:documentation>Kind of equipment (e.g. Radar, Radio, Weapon); inherited from @base when absent.</xs:documentation></xs:annotation>
         </xs:attribute>
       </xs:extension>
     </xs:complexContent>
@@ -729,11 +728,11 @@
 
   <xs:complexType name="KinematicDefinitionType">
     <xs:annotation>
-      <xs:documentation>Définition d'équipement cinématique. La définition racine (sans @base) déclare au
-        minimum, en données d'initialisation, une position (Position) et une orientation (Orientation) ;
-        toute autre cinématique en dérive (ex. FixedWingKinematic, base="Kinematic") et ajoute des données
-        technologiques et d'initialisation. La présence de Position et Orientation dans la chaîne de
-        dérivation est vérifiée par l'outil.</xs:documentation>
+      <xs:documentation>Kinematic equipment definition. The root definition (without @base) declares at least,
+        as initialization data, a position (Position) and an orientation (Orientation); every other
+        kinematic derives from it (e.g. FixedWingKinematic, base="Kinematic") and adds technological
+        and initialization data. The presence of Position and Orientation along the derivation chain
+        is checked by the tool.</xs:documentation>
     </xs:annotation>
     <xs:complexContent>
       <xs:extension base="x:DefinitionBaseType"/>
@@ -742,7 +741,7 @@
 
   <xs:element name="EquipmentLibrary">
     <xs:annotation>
-      <xs:documentation>Bibliothèque d'équipements ; peut constituer un fichier à elle seule.</xs:documentation>
+      <xs:documentation>Equipment library; can be a file on its own.</xs:documentation>
     </xs:annotation>
     <xs:complexType>
       <xs:choice minOccurs="0" maxOccurs="unbounded">
@@ -755,9 +754,9 @@
 
   <xs:complexType name="EquipmentType">
     <xs:annotation>
-      <xs:documentation>Équipement d'une entité. Sans existence propre : il n'est déclaré qu'à l'intérieur d'une entité.
-        S'il référence une définition (@definition), son contenu complète ou surcharge celui de la définition
-        (fusion par nom de donnée, faite par l'outil) ; sinon il est entièrement décrit sur place et @type est attendu.</xs:documentation>
+      <xs:documentation>Equipment of an entity. It has no existence of its own: it is only declared inside an entity.
+        When it references a definition (@definition), its content completes or overrides the definition's
+        (merge by data name, done by the tool); otherwise it is fully described in place and @type is expected.</xs:documentation>
     </xs:annotation>
     <xs:group ref="x:EquipmentContent"/>
     <xs:attribute name="name" type="x:IdentifierType" use="required"/>
@@ -767,22 +766,22 @@
 
   <xs:complexType name="KinematicType">
     <xs:annotation>
-      <xs:documentation>Équipement cinématique d'un archétype d'entité (obligatoire, un seul). Il s'appuie sur
-        une définition cinématique de la bibliothèque, dont il peut surcharger les valeurs par défaut.</xs:documentation>
+      <xs:documentation>Kinematic equipment of an entity archetype (mandatory, exactly one). It relies on a library
+        kinematic definition, whose default values it may override.</xs:documentation>
     </xs:annotation>
     <xs:group ref="x:EquipmentContent"/>
     <xs:attribute name="definition" type="x:IdentifierType" use="required"/>
   </xs:complexType>
 
   <!-- ================================================================== -->
-  <!-- Entités                                                            -->
+  <!-- Entities                                                           -->
   <!-- ================================================================== -->
 
   <xs:simpleType name="DisEntityTypeType">
     <xs:annotation>
-      <xs:documentation>Type d'entité DIS (IEEE 1278.1, Entity Type Record) en notation pointée
-        Kind.Domain.Country.Category.Subcategory.Specific.Extra, par exemple 1.1.225.1.0.0.0.
-        Country est sur 16 bits, les autres champs sur 8 bits. Même notation que XCGF.ArchetypeEditor.</xs:documentation>
+      <xs:documentation>DIS entity type (IEEE 1278.1, Entity Type Record) in dotted notation
+        Kind.Domain.Country.Category.Subcategory.Specific.Extra, e.g. 1.1.225.1.0.0.0.
+        Country is 16 bits, the other fields are 8 bits. Same notation as XCGF.ArchetypeEditor.</xs:documentation>
     </xs:annotation>
     <xs:restriction base="xs:string">
       <xs:pattern value="(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.(6553[0-5]|655[0-2][0-9]|65[0-4][0-9]{2}|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{0,3}|0)\.(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])"/>
@@ -791,7 +790,7 @@
 
   <xs:simpleType name="EnvironmentType">
     <xs:annotation>
-      <xs:documentation>Environnement d'évolution, aligné sur le domaine DIS (comme EntityEnvironment de XCGF.ArchetypeEditor).</xs:documentation>
+      <xs:documentation>Operating environment, aligned with the DIS domain (like EntityEnvironment in XCGF.ArchetypeEditor).</xs:documentation>
     </xs:annotation>
     <xs:restriction base="xs:string">
       <xs:enumeration value="Other"/>
@@ -805,8 +804,8 @@
 
   <xs:complexType name="EntityType">
     <xs:annotation>
-      <xs:documentation>Archétype d'entité (plateforme) : conteneur d'équipements, identifié par un nom unique,
-        avec un équipement cinématique obligatoire.</xs:documentation>
+      <xs:documentation>Entity (platform) archetype: container of equipments, identified by a unique name,
+        with a mandatory kinematic equipment.</xs:documentation>
     </xs:annotation>
     <xs:sequence>
       <xs:element name="Description" type="xs:string" minOccurs="0"/>
@@ -825,14 +824,14 @@
     <xs:attribute name="disType" type="x:DisEntityTypeType" use="required"/>
     <xs:attribute name="environment" type="x:EnvironmentType" use="optional"/>
     <xs:attribute name="folder" type="xs:string" use="optional">
-      <xs:annotation><xs:documentation>Classement dans la bibliothèque, segments séparés par '/' (ex. Platforms/Armored).</xs:documentation></xs:annotation>
+      <xs:annotation><xs:documentation>Classification in the library, segments separated by '/' (e.g. Platforms/Armored).</xs:documentation></xs:annotation>
     </xs:attribute>
     <xs:attributeGroup ref="x:FileRootAttributes"/>
   </xs:complexType>
 
   <xs:element name="Entity" type="x:EntityType">
-    <xs:annotation><xs:documentation>Entité ; peut constituer un fichier à elle seule.</xs:documentation></xs:annotation>
-    <!-- Nom d'équipement unique au sein de son entité. -->
+    <xs:annotation><xs:documentation>Entity; can be a file on its own.</xs:documentation></xs:annotation>
+    <!-- Equipment name unique within its entity. -->
     <xs:unique name="EquipmentNameUnique">
       <xs:selector xpath="x:Equipments/x:Equipment"/>
       <xs:field xpath="@name"/>
@@ -849,35 +848,35 @@
   </xs:complexType>
 
   <!-- ================================================================== -->
-  <!-- Unités                                                             -->
+  <!-- Units                                                              -->
   <!-- ================================================================== -->
 
   <xs:complexType name="EntityRefType">
     <xs:attribute name="entity" type="x:IdentifierType" use="required">
-      <xs:annotation><xs:documentation>Nom d'un archétype d'entité déclaré dans Entities.</xs:documentation></xs:annotation>
+      <xs:annotation><xs:documentation>Name of an entity archetype declared in Entities.</xs:documentation></xs:annotation>
     </xs:attribute>
     <xs:attribute name="count" type="xs:positiveInteger" use="optional" default="1">
-      <xs:annotation><xs:documentation>Nombre d'entités de cet archétype dans l'unité.</xs:documentation></xs:annotation>
+      <xs:annotation><xs:documentation>Number of entities of this archetype in the unit.</xs:documentation></xs:annotation>
     </xs:attribute>
     <xs:attribute name="role" type="xs:string" use="optional">
-      <xs:annotation><xs:documentation>Rôle dans l'unité (ex. Chef, Ailier).</xs:documentation></xs:annotation>
+      <xs:annotation><xs:documentation>Role in the unit (e.g. Leader, Wingman).</xs:documentation></xs:annotation>
     </xs:attribute>
   </xs:complexType>
 
   <xs:complexType name="UnitRefType">
     <xs:attribute name="unit" type="x:IdentifierType" use="required">
-      <xs:annotation><xs:documentation>Nom d'un archétype d'unité déclaré dans Units.</xs:documentation></xs:annotation>
+      <xs:annotation><xs:documentation>Name of a unit archetype declared in Units.</xs:documentation></xs:annotation>
     </xs:attribute>
     <xs:attribute name="count" type="xs:positiveInteger" use="optional" default="1">
-      <xs:annotation><xs:documentation>Nombre de sous-unités de cet archétype.</xs:documentation></xs:annotation>
+      <xs:annotation><xs:documentation>Number of sub-units of this archetype.</xs:documentation></xs:annotation>
     </xs:attribute>
     <xs:attribute name="role" type="xs:string" use="optional"/>
   </xs:complexType>
 
   <xs:complexType name="UnitType">
     <xs:annotation>
-      <xs:documentation>Archétype d'unité : composition d'archétypes d'entités (EntityRef) et d'archétypes
-        d'unités (UnitRef, sous-unités), chacun avec un effectif (count).</xs:documentation>
+      <xs:documentation>Unit archetype: composition of entity archetypes (EntityRef) and unit archetypes
+        (UnitRef, sub-units), each with a headcount (count).</xs:documentation>
     </xs:annotation>
     <xs:sequence>
       <xs:element name="Description" type="xs:string" minOccurs="0"/>
@@ -887,7 +886,7 @@
     </xs:sequence>
     <xs:attribute name="name" type="x:IdentifierType" use="required"/>
     <xs:attribute name="folder" type="xs:string" use="optional">
-      <xs:annotation><xs:documentation>Classement dans la bibliothèque, segments séparés par '/'.</xs:documentation></xs:annotation>
+      <xs:annotation><xs:documentation>Classification in the library, segments separated by '/'.</xs:documentation></xs:annotation>
     </xs:attribute>
   </xs:complexType>
 
