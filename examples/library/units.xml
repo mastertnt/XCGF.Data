@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Archétypes d'unités : compositions d'archétypes d'entités et d'unités. -->
+<!-- Unit archetypes: compositions of entity and unit archetypes. -->
 <Units xmlns="urn:xcgf:data:1.0">
 
   <Unit name="FighterPatrol" folder="Air">
-    <Description>Patrouille de deux chasseurs.</Description>
+    <Description>Patrol of two fighters.</Description>
     <EntityRef entity="Fighter" role="Leader"/>
     <EntityRef entity="Fighter" role="Wingman"/>
     <Tasks>
       <TaskRef task="MoveTo"/>
       <TaskRef task="FollowFlightPlan"/>
-      <!-- Capacité propre à la patrouille ; formation par défaut en ligne. -->
+      <!-- Patrol-specific capability; line formation by default. -->
       <TaskRef task="ChangeFormation">
         <Parameter name="Formation" dataType="FormationEnum"><DefaultValue>Line</DefaultValue></Parameter>
       </TaskRef>

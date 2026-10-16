@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Bibliothèque de tâches, référencées par les équipements, les entités et les unités (TaskRef).
-  WhoTaskee est obligatoire ; les autres catégories 5W et tous les paramètres sont optionnels,
-  sauf required="true".
+  Task library, referenced by equipments, entities and units (TaskRef).
+  WhoTaskee is mandatory; the other 5W categories and all parameters are optional,
+  unless required="true".
 -->
 <TaskLibrary xmlns="urn:xcgf:data:1.0">
 
   <TaskDefinition name="MoveTo">
-    <Description>Rejoindre une position géographique, sans tenir compte de l'altitude.</Description>
+    <Description>Move to a geographic position, ignoring altitude.</Description>
     <WhoTaskee>
       <Parameter name="Executor" dataType="EntityReference"/>
     </WhoTaskee>
@@ -20,7 +20,7 @@
       </Parameter>
     </What>
     <Where>
-      <!-- Point 2D : l'altitude est ignorée. -->
+      <!-- 2D point: altitude is ignored. -->
       <Parameter name="Destination" dataType="GeoPoint2D" required="true"/>
     </Where>
     <ActivationTrigger>
@@ -37,7 +37,7 @@
   </TaskDefinition>
 
   <TaskDefinition name="FireOnTarget">
-    <Description>Tirer sur une cible.</Description>
+    <Description>Fire on a target.</Description>
     <WhoTasker>
       <Parameter name="Commander" dataType="EntityReference"/>
     </WhoTasker>
@@ -48,7 +48,7 @@
       <Parameter name="Target" dataType="EntityReference" required="true"/>
     </WhoAffected>
     <What>
-      <!-- Moyen employé : un équipement de l'exécutant. -->
+      <!-- Means used: an equipment of the performer. -->
       <Parameter name="Weapon" dataType="EquipmentReference"/>
       <Parameter name="Salvo" dataType="Count">
         <DefaultValue>1</DefaultValue>
@@ -75,7 +75,7 @@
   </TaskDefinition>
 
   <TaskDefinition name="FollowFlightPlan">
-    <Description>Suivre un plan de vol.</Description>
+    <Description>Follow a flight plan.</Description>
     <WhoTaskee>
       <Parameter name="Executor" dataType="EntityReference"/>
     </WhoTaskee>
@@ -99,9 +99,9 @@
   </TaskDefinition>
 
   <TaskDefinition name="ChangeFormation">
-    <Description>Faire changer de formation une unité.</Description>
+    <Description>Change the formation of a unit.</Description>
     <WhoTaskee>
-      <!-- Le chef de patrouille conduit le changement (Who ne contient que des entités). -->
+      <!-- The patrol leader drives the change (Who only holds entities). -->
       <Parameter name="Leader" dataType="EntityReference"/>
     </WhoTaskee>
     <What>

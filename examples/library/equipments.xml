@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Bibliothèque d'équipements : définitions réutilisées par les archétypes d'entités. -->
+<!-- Equipment library: definitions reused by entity archetypes. -->
 <EquipmentLibrary xmlns="urn:xcgf:data:1.0">
 
-  <!-- Cinématiques ======================================================= -->
+  <!-- Kinematics ========================================================= -->
 
-  <!-- Cinématique racine : toute cinématique en dérive et hérite de Position et Orientation. -->
+  <!-- Root kinematic: every kinematic derives from it and inherits Position and Orientation. -->
   <KinematicDefinition name="Kinematic">
-    <Description>Cinématique de base : position et orientation.</Description>
+    <Description>Base kinematic: position and orientation.</Description>
     <InitializationData>
       <Parameter name="Position" dataType="GeoPosition"/>
       <Parameter name="Orientation" dataType="Orientation"/>
@@ -14,14 +14,14 @@
   </KinematicDefinition>
 
   <KinematicDefinition name="FixedWingKinematic" base="Kinematic">
-    <Description>Cinématique d'aéronef à voilure fixe.</Description>
+    <Description>Fixed-wing aircraft kinematic.</Description>
     <TechnologicalData>
       <Parameter name="StallSpeed" dataType="SpeedMetersPerSecond"><DefaultValue>60</DefaultValue></Parameter>
       <Parameter name="MaxSpeed" dataType="SpeedMetersPerSecond"><DefaultValue>600</DefaultValue></Parameter>
       <Parameter name="Ceiling" dataType="DistanceMeters"><DefaultValue>15000</DefaultValue></Parameter>
     </TechnologicalData>
     <InitializationData>
-      <!-- Vitesse initiale bornée par deux données technologiques. -->
+      <!-- Initial speed bounded by two technological data items. -->
       <Parameter name="InitialSpeed" dataType="SpeedMetersPerSecond">
         <DefaultValue>200</DefaultValue>
         <Constraints>
@@ -32,10 +32,10 @@
     </InitializationData>
   </KinematicDefinition>
 
-  <!-- Capteurs et armements ============================================== -->
+  <!-- Sensors and weapons =============================================== -->
 
   <EquipmentDefinition name="FighterRadar" type="Radar">
-    <Description>Radar de conduite de tir.</Description>
+    <Description>Fire control radar.</Description>
     <TechnologicalData>
       <Parameter name="MaxRange" dataType="DistanceMeters">
         <DefaultValue>150000</DefaultValue>
@@ -66,7 +66,7 @@
   </EquipmentDefinition>
 
   <EquipmentDefinition name="AirToAirMissile" type="Weapon">
-    <Description>Missile air-air.</Description>
+    <Description>Air-to-air missile.</Description>
     <TechnologicalData>
       <Parameter name="MinRange" dataType="DistanceMeters"><DefaultValue>1000</DefaultValue></Parameter>
       <Parameter name="MaxRange" dataType="DistanceMeters"><DefaultValue>80000</DefaultValue></Parameter>

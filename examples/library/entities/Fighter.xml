@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Archétype d'aéronef de type chasseur. 1.2.71.1.0.0.0 : plateforme aérienne, France, chasseur (codes illustratifs). -->
+<!-- Fighter aircraft archetype. 1.2.71.1.0.0.0: air platform, France, fighter (illustrative codes). -->
 <Entity xmlns="urn:xcgf:data:1.0" name="Fighter" disType="1.2.71.1.0.0.0" environment="Air" folder="Aircraft/Fighter">
-  <Description>Chasseur armé d'un radar et de deux missiles air-air.</Description>
-  <!-- Hérite de Position et Orientation (cinématique racine) ; surcharge la vitesse initiale par défaut. -->
+  <Description>Fighter with a radar and two air-to-air missiles.</Description>
+  <!-- Inherits Position and Orientation (root kinematic); overrides the default initial speed. -->
   <Kinematic definition="FixedWingKinematic">
     <InitializationData>
       <Parameter name="InitialSpeed" dataType="SpeedMetersPerSecond"><DefaultValue>250</DefaultValue></Parameter>
