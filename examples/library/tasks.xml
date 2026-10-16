@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Task library, referenced by equipments, entities and units (TaskRef).
+  WhoTaskee is mandatory; the other 5W categories and all parameters are optional,
+  unless required="true".
+-->
+<TaskLibrary xmlns="urn:xcgf:data:1.0">
+
+  <TaskDefinition name="MoveTo">
+    <Description>Move to a geographic position, ignoring altitude.</Description>
+    <WhoTaskee>
+      <Parameter name="Executor" dataType="EntityReference"/>
+    </WhoTaskee>
+    <What>
+      <Parameter name="Speed" dataType="SpeedMetersPerSecond">
+        <DefaultValue>250</DefaultValue>
+        <Constraints>
+          <Min value="0" inclusive="false"/>
+        </Constraints>
+      </Parameter>
+    </What>
+    <When>
+      <!-- Output: time actually spent reaching the destination. -->
+      <Parameter name="TravelTime" dataType="DurationSeconds" direction="Out"/>
+    </When>
+    <Where>
+      <!-- 2D point: altitude is ignored. -->
+      <Parameter name="Destination" dataType="GeoPoint2D" required="true"/>
+    </Where>
+    <ActivationTrigger>
+      <Immediate/>
+    </ActivationTrigger>
+    <ExitTriggers>
+      <ExitTrigger outcome="Success">
+        <OnPositionReached parameter="Destination" tolerance="500"/>
+      </ExitTrigger>
+      <ExitTrigger outcome="Failure">
+        <AtTime delay="PT1H"/>
+      </ExitTrigger>
+    </ExitTriggers>
+  </TaskDefinition>
+
+  <TaskDefinition name="FireOnTarget">
+    <Description>Fire on a target.</Description>
+    <WhoTasker>
+      <Parameter name="Commander" dataType="EntityReference"/>
+    </WhoTasker>
+    <WhoTaskee>
+      <Parameter name="Shooter" dataType="EntityReference"/>
+    </WhoTaskee>
+    <WhoAffected>
+      <Parameter name="Target" dataType="EntityReference" required="true"/>
+    </WhoAffected>
+    <What>
+      <!-- Means used: an equipment of the performer. -->
+      <Parameter name="Weapon" dataType="EquipmentReference"/>
+      <!-- Output: number of missiles actually fired. -->
+      <Parameter name="ShotsFired" dataType="Count" direction="Out"/>
+      <Parameter name="Salvo" dataType="Count">
+        <DefaultValue>1</DefaultValue>
+        <Constraints>
+          <Min value="1"/>
+          <Max value="2"/>
+        </Constraints>
+      </Parameter>
+    </What>
+    <ActivationTrigger>
+      <OnCondition expression="InRange(Weapon, Target)"/>
+    </ActivationTrigger>
+    <ExitTriggers>
+      <ExitTrigger outcome="Success">
+        <OnEvent event="TargetDestroyed"/>
+      </ExitTrigger>
+      <ExitTrigger outcome="Failure">
+        <OnEvent event="WeaponsExhausted"/>
+      </ExitTrigger>
+      <ExitTrigger outcome="Aborted">
+        <OnEvent event="CeaseFire"/>
+      </ExitTrigger>
+    </ExitTriggers>
+  </TaskDefinition>
+
+  <TaskDefinition name="FollowFlightPlan">
+    <Description>Follow a flight plan.</Description>
+    <WhoTaskee>
+      <Parameter name="Executor" dataType="EntityReference"/>
+    </WhoTaskee>
+    <What>
+      <Parameter name="Loop" dataType="HLAboolean"><DefaultValue>HLAfalse</DefaultValue></Parameter>
+    </What>
+    <Where>
+      <Parameter name="Plan" dataType="FlightPlan" required="true"/>
+      <!-- Input/output: starting waypoint, updated as the plan is flown. -->
+      <Parameter name="CurrentWaypoint" dataType="Count" direction="InOut">
+        <DefaultValue>0</DefaultValue>
+        <Constraints>
+          <Min value="0"/>
+        </Constraints>
+      </Parameter>
+    </Where>
+    <ActivationTrigger>
+      <OnTaskEnd task="MoveTo" outcome="Success"/>
+    </ActivationTrigger>
+    <ExitTriggers>
+      <ExitTrigger outcome="Success">
+        <CustomTrigger kind="FlightPlanCompleted"/>
+      </ExitTrigger>
+      <ExitTrigger outcome="Aborted">
+        <OnCondition expression="Fuel &lt; 0.1"/>
+      </ExitTrigger>
+    </ExitTriggers>
+  </TaskDefinition>
+
+  <TaskDefinition name="ChangeFormation">
+    <Description>Change the formation of a unit.</Description>
+    <WhoTaskee>
+      <!-- The patrol leader drives the change (Who only holds entities). -->
+      <Parameter name="Leader" dataType="EntityReference"/>
+    </WhoTaskee>
+    <What>
+      <Parameter name="Formation" dataType="FormationEnum" required="true"/>
+      <Parameter name="Spacing" dataType="DistanceMeters">
+        <DefaultValue>1000</DefaultValue>
+        <Constraints>
+          <Min value="100"/>
+        </Constraints>
+      </Parameter>
+    </What>
+    <ActivationTrigger>
+      <Immediate/>
+    </ActivationTrigger>
+    <ExitTriggers>
+      <ExitTrigger outcome="Success">
+        <CustomTrigger kind="FormationEstablished">
+          <Argument name="tolerance" value="100"/>
+        </CustomTrigger>
+      </ExitTrigger>
+      <ExitTrigger outcome="Failure">
+        <AtTime delay="PT5M"/>
+      </ExitTrigger>
+    </ExitTriggers>
+  </TaskDefinition>
+
+</TaskLibrary>

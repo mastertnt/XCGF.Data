@@ -1,0 +1,916 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  XCGF.Data: schema describing XCGF archetypes.
+
+  The schema only describes archetypes (entity, equipment, unit and task types), never
+  instances: no actual position, no reference to a concrete instance. Any value carried by
+  a data item is therefore a default value (DefaultValue) that instantiation (the scenario)
+  may override.
+
+  The document describes:
+    - data types, modelled on the HLA OMT (IEEE 1516-2010);
+    - an equipment library (reusable definitions);
+    - entity archetypes (DIS type, unique name), containers of equipments, with a mandatory
+      kinematic equipment whose definition declares at least a position and an orientation;
+      definitions may derive from one another.
+      An entity equipment only exists inside its entity; it may rely on a library definition;
+    - unit archetypes, compositions of entity archetypes (and of sub-units);
+    - a task library (optional 5W parameters, an activation trigger, exit triggers),
+      referenced by equipments, entities and units.
+
+  Splitting into files: DataTypes, EquipmentLibrary, TaskLibrary, Entities, Entity and Units are
+  global elements, so each one can be the root of a file that validates on its own. An XcgfData
+  document assembles them with XInclude (xi:include); every reference constraint (types,
+  equipment definitions, entities) is checked on the assembled document:
+    xmllint -xinclude -noout -schema schemas/xcgf-data.xsd examples/library/library.xml
+
+  Extensible constraints: every constraint is an element of the x:Constraint substitution
+  group. A third-party schema can add new ones by deriving x:ConstraintType; CustomConstraint
+  covers one-off needs without a new schema. Triggers follow the same principle (x:Trigger).
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:x="urn:xcgf:data:1.0"
+           targetNamespace="urn:xcgf:data:1.0"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified"
+           version="1.0">
+
+  <!-- ================================================================== -->
+  <!-- Root                                                               -->
+  <!-- ================================================================== -->
+
+  <xs:element name="XcgfData">
+    <xs:annotation>
+      <xs:documentation>Root of an XCGF document. Sections may appear several times and in any order,
+        which allows assembling a library split into several files.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element ref="x:DataTypes"/>
+        <xs:element ref="x:EquipmentLibrary"/>
+        <xs:element ref="x:TaskLibrary"/>
+        <xs:element ref="x:Entities"/>
+        <xs:element ref="x:Units"/>
+      </xs:choice>
+      <xs:attribute name="version" type="xs:string" use="optional"/>
+    </xs:complexType>
+
+    <!-- Data type names: unique across all categories. -->
+    <xs:key name="DataTypeKey">
+      <xs:selector xpath="x:DataTypes/x:BasicData|x:DataTypes/x:SimpleData|x:DataTypes/x:EnumeratedData|x:DataTypes/x:ArrayData|x:DataTypes/x:FixedRecordData|x:DataTypes/x:VariantRecordData|x:DataTypes/x:ReferenceData"/>
+      <xs:field xpath="@name"/>
+    </xs:key>
+
+    <!-- Basic data representations (targets of @representation). -->
+    <xs:key name="BasicDataKey">
+      <xs:selector xpath="x:DataTypes/x:BasicData"/>
+      <xs:field xpath="@name"/>
+    </xs:key>
+
+    <!-- Enumerated types (targets of a variant record discriminant). -->
+    <xs:key name="EnumeratedDataKey">
+      <xs:selector xpath="x:DataTypes/x:EnumeratedData"/>
+      <xs:field xpath="@name"/>
+    </xs:key>
+
+    <!-- Every @dataType reference must name a declared type. -->
+    <xs:keyref name="DataTypeRef" refer="x:DataTypeKey">
+      <xs:selector xpath="x:DataTypes/x:ArrayData|.//x:Field|.//x:Alternative|.//x:Parameter"/>
+      <xs:field xpath="@dataType"/>
+    </xs:keyref>
+
+    <xs:keyref name="RepresentationRef" refer="x:BasicDataKey">
+      <xs:selector xpath="x:DataTypes/x:SimpleData|x:DataTypes/x:EnumeratedData"/>
+      <xs:field xpath="@representation"/>
+    </xs:keyref>
+
+    <xs:keyref name="DiscriminantTypeRef" refer="x:EnumeratedDataKey">
+      <xs:selector xpath="x:DataTypes/x:VariantRecordData"/>
+      <xs:field xpath="@dataType"/>
+    </xs:keyref>
+
+    <!-- Equipment definition name unique in the library. -->
+    <xs:unique name="EquipmentLibraryNameUnique">
+      <xs:selector xpath="x:EquipmentLibrary/x:EquipmentDefinition|x:EquipmentLibrary/x:KinematicDefinition"/>
+      <xs:field xpath="@name"/>
+    </xs:unique>
+
+    <xs:key name="EquipmentDefinitionKey">
+      <xs:selector xpath="x:EquipmentLibrary/x:EquipmentDefinition"/>
+      <xs:field xpath="@name"/>
+    </xs:key>
+
+    <xs:key name="KinematicDefinitionKey">
+      <xs:selector xpath="x:EquipmentLibrary/x:KinematicDefinition"/>
+      <xs:field xpath="@name"/>
+    </xs:key>
+
+    <!-- A definition only derives from a definition of the same kind. -->
+    <xs:keyref name="EquipmentDefinitionBaseRef" refer="x:EquipmentDefinitionKey">
+      <xs:selector xpath="x:EquipmentLibrary/x:EquipmentDefinition"/>
+      <xs:field xpath="@base"/>
+    </xs:keyref>
+
+    <xs:keyref name="KinematicDefinitionBaseRef" refer="x:KinematicDefinitionKey">
+      <xs:selector xpath="x:EquipmentLibrary/x:KinematicDefinition"/>
+      <xs:field xpath="@base"/>
+    </xs:keyref>
+
+    <!-- An entity's kinematic relies on a kinematic definition. -->
+    <xs:keyref name="KinematicDefinitionRef" refer="x:KinematicDefinitionKey">
+      <xs:selector xpath="x:Entities/x:Entity/x:Kinematic"/>
+      <xs:field xpath="@definition"/>
+    </xs:keyref>
+
+    <!-- An entity equipment can only rely on an existing definition. -->
+    <xs:keyref name="EquipmentDefinitionRef" refer="x:EquipmentDefinitionKey">
+      <xs:selector xpath="x:Entities/x:Entity/x:Equipments/x:Equipment"/>
+      <xs:field xpath="@definition"/>
+    </xs:keyref>
+
+    <!-- Entity name unique across all entities of the document. -->
+    <xs:key name="EntityNameKey">
+      <xs:selector xpath="x:Entities/x:Entity"/>
+      <xs:field xpath="@name"/>
+    </xs:key>
+
+    <!-- Unit archetype name unique. -->
+    <xs:key name="UnitNameKey">
+      <xs:selector xpath="x:Units/x:Unit"/>
+      <xs:field xpath="@name"/>
+    </xs:key>
+
+    <!-- Task definition name unique in the library. -->
+    <xs:key name="TaskDefinitionKey">
+      <xs:selector xpath="x:TaskLibrary/x:TaskDefinition"/>
+      <xs:field xpath="@name"/>
+    </xs:key>
+
+    <!-- Equipments, entities and units only reference defined tasks. -->
+    <xs:keyref name="TaskRef" refer="x:TaskDefinitionKey">
+      <xs:selector xpath=".//x:TaskRef"/>
+      <xs:field xpath="@task"/>
+    </xs:keyref>
+
+    <!-- A sub-unit names an existing unit archetype (cycles are detected by the tool). -->
+    <xs:keyref name="UnitUnitRef" refer="x:UnitNameKey">
+      <xs:selector xpath=".//x:UnitRef"/>
+      <xs:field xpath="@unit"/>
+    </xs:keyref>
+
+    <!-- A unit can only reference an existing entity archetype. -->
+    <xs:keyref name="UnitEntityRef" refer="x:EntityNameKey">
+      <xs:selector xpath=".//x:EntityRef"/>
+      <xs:field xpath="@entity"/>
+    </xs:keyref>
+  </xs:element>
+
+  <!-- ================================================================== -->
+  <!-- Common simple types                                                -->
+  <!-- ================================================================== -->
+
+  <xs:simpleType name="IdentifierType">
+    <xs:annotation>
+      <xs:documentation>Identifier: a letter or '_' followed by letters, digits, '_', '-' or '.'.</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[A-Za-z_][A-Za-z0-9_.\-]*"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="EndianType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Big"/>
+      <xs:enumeration value="Little"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="CardinalityType">
+    <xs:annotation>
+      <xs:documentation>HLA cardinality: an integer, a "min..max" range or "Dynamic".</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:pattern value="Dynamic|[0-9]+|[0-9]+\.\.[0-9]+"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- ================================================================== -->
+  <!-- Data types (HLA OMT 1516-2010)                                     -->
+  <!-- ================================================================== -->
+
+  <!-- xml:* attributes (notably xml:base, added by XInclude) on file roots. -->
+  <xs:attributeGroup name="FileRootAttributes">
+    <xs:anyAttribute namespace="http://www.w3.org/XML/1998/namespace" processContents="skip"/>
+  </xs:attributeGroup>
+
+  <xs:element name="DataTypes" type="x:DataTypesType"/>
+
+  <xs:complexType name="DataTypesType">
+    <xs:annotation>
+      <xs:documentation>Type declarations, in any order.</xs:documentation>
+    </xs:annotation>
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="BasicData" type="x:BasicDataType"/>
+      <xs:element name="SimpleData" type="x:SimpleDataType"/>
+      <xs:element name="EnumeratedData" type="x:EnumeratedDataType"/>
+      <xs:element name="ArrayData" type="x:ArrayDataType"/>
+      <xs:element name="FixedRecordData" type="x:FixedRecordDataType"/>
+      <xs:element name="VariantRecordData" type="x:VariantRecordDataType"/>
+      <xs:element name="ReferenceData" type="x:ReferenceDataType"/>
+    </xs:choice>
+    <xs:attributeGroup ref="x:FileRootAttributes"/>
+  </xs:complexType>
+
+  <xs:complexType name="DataTypeBase" abstract="true">
+    <xs:sequence>
+      <xs:element name="Semantics" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="name" type="x:IdentifierType" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="BasicDataType">
+    <xs:annotation>
+      <xs:documentation>Basic binary representation (e.g. HLAinteger32BE, HLAfloat64LE).</xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="x:DataTypeBase">
+        <xs:attribute name="size" type="xs:positiveInteger" use="required">
+          <xs:annotation><xs:documentation>Size in bits.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="interpretation" type="xs:string" use="optional"/>
+        <xs:attribute name="endian" type="x:EndianType" use="required"/>
+        <xs:attribute name="encoding" type="xs:string" use="optional"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="SimpleDataType">
+    <xs:annotation>
+      <xs:documentation>Scalar type defined on a basic representation, with units and precision.</xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="x:DataTypeBase">
+        <xs:attribute name="representation" type="x:IdentifierType" use="required"/>
+        <xs:attribute name="units" type="xs:string" use="optional"/>
+        <xs:attribute name="resolution" type="xs:string" use="optional"/>
+        <xs:attribute name="accuracy" type="xs:string" use="optional"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="EnumeratedDataType">
+    <xs:complexContent>
+      <xs:extension base="x:DataTypeBase">
+        <xs:sequence>
+          <xs:element name="Enumerator" maxOccurs="unbounded">
+            <xs:complexType>
+              <xs:attribute name="name" type="x:IdentifierType" use="required"/>
+              <xs:attribute name="value" type="xs:long" use="required"/>
+            </xs:complexType>
+          </xs:element>
+        </xs:sequence>
+        <xs:attribute name="representation" type="x:IdentifierType" use="required"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="ArrayDataType">
+    <xs:complexContent>
+      <xs:extension base="x:DataTypeBase">
+        <xs:attribute name="dataType" type="x:IdentifierType" use="required">
+          <xs:annotation><xs:documentation>Element type.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="cardinality" type="x:CardinalityType" use="required"/>
+        <xs:attribute name="encoding" type="xs:string" use="required">
+          <xs:annotation><xs:documentation>E.g. HLAfixedArray, HLAvariableArray.</xs:documentation></xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="FieldType">
+    <xs:sequence>
+      <xs:element name="Semantics" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="name" type="x:IdentifierType" use="required"/>
+    <xs:attribute name="dataType" type="x:IdentifierType" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="FixedRecordDataType">
+    <xs:complexContent>
+      <xs:extension base="x:DataTypeBase">
+        <xs:sequence>
+          <xs:element name="Field" type="x:FieldType" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="encoding" type="xs:string" use="optional" default="HLAfixedRecord"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="VariantRecordDataType">
+    <xs:complexContent>
+      <xs:extension base="x:DataTypeBase">
+        <xs:sequence>
+          <xs:element name="Alternative" maxOccurs="unbounded">
+            <xs:complexType>
+              <xs:complexContent>
+                <xs:extension base="x:FieldType">
+                  <xs:attribute name="enumerator" type="xs:string" use="required">
+                    <xs:annotation><xs:documentation>Discriminant value(s) selecting this alternative (comma-separated list, or HLAother).</xs:documentation></xs:annotation>
+                  </xs:attribute>
+                </xs:extension>
+              </xs:complexContent>
+            </xs:complexType>
+          </xs:element>
+        </xs:sequence>
+        <xs:attribute name="discriminant" type="x:IdentifierType" use="required"/>
+        <xs:attribute name="dataType" type="x:IdentifierType" use="required">
+          <xs:annotation><xs:documentation>Enumerated type of the discriminant.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="encoding" type="xs:string" use="optional" default="HLAvariantRecord"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:simpleType name="ReferenceTargetType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Unit"/>
+      <xs:enumeration value="Entity"/>
+      <xs:enumeration value="Equipment"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="ReferenceDataType">
+    <xs:annotation>
+      <xs:documentation>XCGF extension (not in the HLA OMT): reference to a unit, entity (platform) or equipment
+        instance, never to a type or a definition. An archetype only declares a data item of this
+        type; the target instance is chosen at instantiation (scenario), hence no DefaultValue here.</xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="x:DataTypeBase">
+        <xs:attribute name="target" type="x:ReferenceTargetType" use="required"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <!-- ================================================================== -->
+  <!-- Parameters and tasks                                               -->
+  <!-- ================================================================== -->
+
+  <!-- Constraints: extensible substitution group -->
+
+  <xs:complexType name="ArgumentType">
+    <xs:attribute name="name" type="x:IdentifierType" use="required"/>
+    <xs:attribute name="value" type="xs:string" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="ConstraintType" abstract="true">
+    <xs:annotation>
+      <xs:documentation>Base of every constraint. To add a constraint, derive this type and declare an element
+        with substitutionGroup="x:Constraint" (in this schema or a third-party one).</xs:documentation>
+    </xs:annotation>
+  </xs:complexType>
+
+  <xs:element name="Constraint" type="x:ConstraintType" abstract="true"/>
+
+  <xs:complexType name="BoundConstraintType">
+    <xs:complexContent>
+      <xs:extension base="x:ConstraintType">
+        <xs:attribute name="value" type="xs:string" use="optional">
+          <xs:annotation><xs:documentation>Literal bound.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="ref" type="x:IdentifierType" use="optional">
+          <xs:annotation><xs:documentation>Bound given by a technological data item of the same equipment (e.g. MaxSpeed).
+            Exactly one of value or ref must be set.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="inclusive" type="xs:boolean" use="optional" default="true"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:element name="Min" type="x:BoundConstraintType" substitutionGroup="x:Constraint">
+    <xs:annotation><xs:documentation>Lower bound (inclusive by default).</xs:documentation></xs:annotation>
+  </xs:element>
+
+  <xs:element name="Max" type="x:BoundConstraintType" substitutionGroup="x:Constraint">
+    <xs:annotation><xs:documentation>Upper bound (inclusive by default).</xs:documentation></xs:annotation>
+  </xs:element>
+
+  <xs:complexType name="ListOfValuesConstraintType">
+    <xs:complexContent>
+      <xs:extension base="x:ConstraintType">
+        <xs:sequence>
+          <xs:element name="Value" type="xs:string" maxOccurs="unbounded"/>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:element name="ListOfValues" type="x:ListOfValuesConstraintType" substitutionGroup="x:Constraint">
+    <xs:annotation><xs:documentation>Closed list of allowed values.</xs:documentation></xs:annotation>
+  </xs:element>
+
+  <xs:complexType name="PatternConstraintType">
+    <xs:complexContent>
+      <xs:extension base="x:ConstraintType">
+        <xs:attribute name="value" type="xs:string" use="required"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:element name="Pattern" type="x:PatternConstraintType" substitutionGroup="x:Constraint">
+    <xs:annotation><xs:documentation>Regular expression the textual value must match.</xs:documentation></xs:annotation>
+  </xs:element>
+
+  <xs:complexType name="CustomConstraintType">
+    <xs:complexContent>
+      <xs:extension base="x:ConstraintType">
+        <xs:sequence>
+          <xs:element name="Argument" type="x:ArgumentType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="kind" type="x:IdentifierType" use="required"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:element name="CustomConstraint" type="x:CustomConstraintType" substitutionGroup="x:Constraint">
+    <xs:annotation><xs:documentation>Free-form constraint, identified by kind and interpreted by the tool (e.g. Step).</xs:documentation></xs:annotation>
+  </xs:element>
+
+  <xs:complexType name="ConstraintsType">
+    <xs:annotation>
+      <xs:documentation>Cumulative constraints on a data item's value.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element ref="x:Constraint" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="DataItemType">
+    <xs:annotation>
+      <xs:documentation>Typed data item (equipment, task, entity): optional default value and constraints.
+        In a derived definition or a use of a definition (Equipment, Kinematic, TaskRef), a data item
+        with the same name overrides the default value or adds to the inherited constraints.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="DefaultValue" type="xs:string" minOccurs="0"/>
+      <xs:element name="Constraints" type="x:ConstraintsType" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="name" type="x:IdentifierType" use="required"/>
+    <xs:attribute name="dataType" type="x:IdentifierType" use="required"/>
+  </xs:complexType>
+
+  <xs:simpleType name="DirectionType">
+    <xs:annotation>
+      <xs:documentation>Direction of a task parameter: In (set before execution, default), Out (produced
+        by the task) or InOut (set before execution and updated by it).</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="In"/>
+      <xs:enumeration value="Out"/>
+      <xs:enumeration value="InOut"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="DataItemsType">
+    <xs:sequence>
+      <xs:element name="Parameter" type="x:DataItemType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Triggers: extensible substitution group -->
+
+  <xs:complexType name="TriggerType" abstract="true">
+    <xs:annotation>
+      <xs:documentation>Base of every trigger. To add one, derive this type and declare an element with
+        substitutionGroup="x:Trigger"; CustomTrigger covers one-off needs.</xs:documentation>
+    </xs:annotation>
+  </xs:complexType>
+
+  <xs:element name="Trigger" type="x:TriggerType" abstract="true"/>
+
+  <xs:complexType name="ImmediateTriggerType">
+    <xs:complexContent>
+      <xs:extension base="x:TriggerType"/>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:element name="Immediate" type="x:ImmediateTriggerType" substitutionGroup="x:Trigger">
+    <xs:annotation><xs:documentation>Fires as soon as possible (activation of the carrier, or start of the task for an exit).</xs:documentation></xs:annotation>
+  </xs:element>
+
+  <xs:complexType name="AtTimeTriggerType">
+    <xs:complexContent>
+      <xs:extension base="x:TriggerType">
+        <xs:attribute name="delay" type="xs:duration" use="required">
+          <xs:annotation><xs:documentation>Relative delay (order received for an activation, task start for an exit).
+            An archetype carries no absolute time.</xs:documentation></xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:element name="AtTime" type="x:AtTimeTriggerType" substitutionGroup="x:Trigger"/>
+
+  <xs:complexType name="OnTaskEndTriggerType">
+    <xs:complexContent>
+      <xs:extension base="x:TriggerType">
+        <xs:attribute name="task" type="x:IdentifierType" use="required"/>
+        <xs:attribute name="outcome" type="xs:string" use="optional">
+          <xs:annotation><xs:documentation>Expected outcome of the task (e.g. Success); any outcome when absent.</xs:documentation></xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:element name="OnTaskEnd" type="x:OnTaskEndTriggerType" substitutionGroup="x:Trigger">
+    <xs:annotation><xs:documentation>End of another task (chaining).</xs:documentation></xs:annotation>
+  </xs:element>
+
+  <xs:complexType name="OnPositionReachedTriggerType">
+    <xs:complexContent>
+      <xs:extension base="x:TriggerType">
+        <xs:attribute name="parameter" type="x:IdentifierType" use="optional">
+          <xs:annotation><xs:documentation>Where parameter of the task giving the position to reach (e.g. Destination).</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="tolerance" type="xs:double" use="optional" default="0">
+          <xs:annotation><xs:documentation>Distance in metres under which the position counts as reached.</xs:documentation></xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:element name="OnPositionReached" type="x:OnPositionReachedTriggerType" substitutionGroup="x:Trigger"/>
+
+  <xs:complexType name="OnEventTriggerType">
+    <xs:complexContent>
+      <xs:extension base="x:TriggerType">
+        <xs:attribute name="event" type="xs:string" use="required"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:element name="OnEvent" type="x:OnEventTriggerType" substitutionGroup="x:Trigger">
+    <xs:annotation><xs:documentation>Named event (e.g. EnemyDetected, OrderReceived).</xs:documentation></xs:annotation>
+  </xs:element>
+
+  <xs:complexType name="OnConditionTriggerType">
+    <xs:complexContent>
+      <xs:extension base="x:TriggerType">
+        <xs:attribute name="expression" type="xs:string" use="required"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:element name="OnCondition" type="x:OnConditionTriggerType" substitutionGroup="x:Trigger">
+    <xs:annotation><xs:documentation>Condition evaluated by the tool (e.g. Fuel &lt; 0.2).</xs:documentation></xs:annotation>
+  </xs:element>
+
+  <xs:complexType name="CustomTriggerType">
+    <xs:complexContent>
+      <xs:extension base="x:TriggerType">
+        <xs:sequence>
+          <xs:element name="Argument" type="x:ArgumentType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="kind" type="x:IdentifierType" use="required"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:element name="CustomTrigger" type="x:CustomTriggerType" substitutionGroup="x:Trigger"/>
+
+  <xs:complexType name="ActivationTriggerType">
+    <xs:sequence>
+      <xs:element ref="x:Trigger"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ExitTriggerType">
+    <xs:sequence>
+      <xs:element ref="x:Trigger"/>
+    </xs:sequence>
+    <xs:attribute name="outcome" type="xs:string" use="optional" default="Success">
+      <xs:annotation><xs:documentation>Outcome of the task when this trigger ends it (e.g. Success, Failure, Aborted).</xs:documentation></xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <!-- Task parameters (5W) -->
+
+  <xs:complexType name="TaskParameterType">
+    <xs:annotation>
+      <xs:documentation>Parameter declared by a task definition: type, optional default value, constraints,
+        whether it is required and its direction (only task parameters have a direction).</xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="x:DataItemType">
+        <xs:attribute name="required" type="xs:boolean" use="optional" default="false"/>
+        <xs:attribute name="direction" type="x:DirectionType" use="optional" default="In"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="TaskParametersType">
+    <xs:sequence>
+      <xs:element name="Parameter" type="x:TaskParameterType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Task definition -->
+
+  <xs:complexType name="TaskDefinitionType">
+    <xs:annotation>
+      <xs:documentation>Task definition (e.g. MoveTo). Its parameters are grouped by the 5W (Who, What, When,
+        Where, Why), Who being split into WhoTasker, WhoTaskee and WhoAffected. The three Who only
+        hold entities (ReferenceData targeting Entity); units and equipments go in What. WhoTaskee
+        is mandatory, the other categories are optional, and every parameter is optional
+        (required="false" by default). The task starts on its activation trigger and ends on the
+        first of its exit triggers.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="Description" type="xs:string" minOccurs="0"/>
+      <xs:element name="WhoTasker" type="x:TaskParametersType" minOccurs="0">
+        <xs:annotation><xs:documentation>Who gives the order (tasker). Optional.</xs:documentation></xs:annotation>
+      </xs:element>
+      <xs:element name="WhoTaskee" type="x:TaskParametersType">
+        <xs:annotation><xs:documentation>Who performs the task. Mandatory in every task definition; when no value is given,
+          the performer is the carrier of the task.</xs:documentation></xs:annotation>
+      </xs:element>
+      <xs:element name="WhoAffected" type="x:TaskParametersType" minOccurs="0">
+        <xs:annotation><xs:documentation>Who is concerned or affected by the task (targets, escorted or supported entities...). Optional.</xs:documentation></xs:annotation>
+      </xs:element>
+      <xs:element name="What" type="x:TaskParametersType" minOccurs="0">
+        <xs:annotation><xs:documentation>What: how the action is carried out (speed, formation...), means used (equipments) and other references (units).</xs:documentation></xs:annotation>
+      </xs:element>
+      <xs:element name="When" type="x:TaskParametersType" minOccurs="0">
+        <xs:annotation><xs:documentation>When: times, duration.</xs:documentation></xs:annotation>
+      </xs:element>
+      <xs:element name="Where" type="x:TaskParametersType" minOccurs="0">
+        <xs:annotation><xs:documentation>Where: position, route, area.</xs:documentation></xs:annotation>
+      </xs:element>
+      <xs:element name="Why" type="x:TaskParametersType" minOccurs="0">
+        <xs:annotation><xs:documentation>Why: intent, desired effect.</xs:documentation></xs:annotation>
+      </xs:element>
+      <xs:element name="ActivationTrigger" type="x:ActivationTriggerType"/>
+      <xs:element name="ExitTriggers">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="ExitTrigger" type="x:ExitTriggerType" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+    <xs:attribute name="name" type="x:IdentifierType" use="required"/>
+  </xs:complexType>
+
+  <xs:element name="TaskLibrary">
+    <xs:annotation>
+      <xs:documentation>Task library; can be a file on its own.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="TaskDefinition" type="x:TaskDefinitionType" minOccurs="0" maxOccurs="unbounded">
+          <!-- Parameter name unique within a task, across all 5W categories. -->
+          <xs:unique name="TaskParameterNameUnique">
+            <xs:selector xpath="x:WhoTasker/x:Parameter|x:WhoTaskee/x:Parameter|x:WhoAffected/x:Parameter|x:What/x:Parameter|x:When/x:Parameter|x:Where/x:Parameter|x:Why/x:Parameter"/>
+            <xs:field xpath="@name"/>
+          </xs:unique>
+        </xs:element>
+      </xs:sequence>
+      <xs:attributeGroup ref="x:FileRootAttributes"/>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- Task reference -->
+
+  <xs:complexType name="TaskRefType">
+    <xs:annotation>
+      <xs:documentation>Task its carrier (equipment, entity or unit) can perform, by reference to a TaskLibrary
+        definition. Optional Parameter elements set carrier-specific default values.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="Parameter" type="x:DataItemType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="task" type="x:IdentifierType" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="TasksType">
+    <xs:sequence>
+      <xs:element name="TaskRef" type="x:TaskRefType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- ================================================================== -->
+  <!-- Equipments                                                         -->
+  <!-- ================================================================== -->
+
+  <xs:group name="EquipmentContent">
+    <xs:sequence>
+      <xs:element name="Description" type="xs:string" minOccurs="0"/>
+      <xs:element name="TechnologicalData" type="x:DataItemsType" minOccurs="0">
+        <xs:annotation><xs:documentation>Technological data: characteristics of the equipment (e.g. range, frequency band).</xs:documentation></xs:annotation>
+      </xs:element>
+      <xs:element name="InitializationData" type="x:DataItemsType" minOccurs="0">
+        <xs:annotation><xs:documentation>Initialization data: initial state of the equipment (e.g. mode, active frequency).</xs:documentation></xs:annotation>
+      </xs:element>
+      <xs:element name="Tasks" type="x:TasksType" minOccurs="0"/>
+    </xs:sequence>
+  </xs:group>
+
+  <xs:complexType name="DefinitionBaseType" abstract="true">
+    <xs:annotation>
+      <xs:documentation>Base of library definitions. A definition may derive from another one (@base): it inherits
+        all its data and tasks, adds new ones and may override their values or constraints
+        (merge by name, done by the tool, which also detects cycles).</xs:documentation>
+    </xs:annotation>
+    <xs:group ref="x:EquipmentContent"/>
+    <xs:attribute name="name" type="x:IdentifierType" use="required"/>
+    <xs:attribute name="base" type="x:IdentifierType" use="optional"/>
+  </xs:complexType>
+
+  <xs:complexType name="EquipmentDefinitionType">
+    <xs:annotation>
+      <xs:documentation>Library equipment definition, reusable by several entities.</xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="x:DefinitionBaseType">
+        <xs:attribute name="type" type="xs:string" use="optional">
+          <xs:annotation><xs:documentation>Kind of equipment (e.g. Radar, Radio, Weapon); inherited from @base when absent.</xs:documentation></xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="KinematicDefinitionType">
+    <xs:annotation>
+      <xs:documentation>Kinematic equipment definition. The root definition (without @base) declares at least,
+        as initialization data, a position (Position) and an orientation (Orientation); every other
+        kinematic derives from it (e.g. FixedWingKinematic, base="Kinematic") and adds technological
+        and initialization data. The presence of Position and Orientation along the derivation chain
+        is checked by the tool.</xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="x:DefinitionBaseType"/>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:element name="EquipmentLibrary">
+    <xs:annotation>
+      <xs:documentation>Equipment library; can be a file on its own.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element name="EquipmentDefinition" type="x:EquipmentDefinitionType"/>
+        <xs:element name="KinematicDefinition" type="x:KinematicDefinitionType"/>
+      </xs:choice>
+      <xs:attributeGroup ref="x:FileRootAttributes"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:complexType name="EquipmentType">
+    <xs:annotation>
+      <xs:documentation>Equipment of an entity. It has no existence of its own: it is only declared inside an entity.
+        When it references a definition (@definition), its content completes or overrides the definition's
+        (merge by data name, done by the tool); otherwise it is fully described in place and @type is expected.</xs:documentation>
+    </xs:annotation>
+    <xs:group ref="x:EquipmentContent"/>
+    <xs:attribute name="name" type="x:IdentifierType" use="required"/>
+    <xs:attribute name="definition" type="x:IdentifierType" use="optional"/>
+    <xs:attribute name="type" type="xs:string" use="optional"/>
+  </xs:complexType>
+
+  <xs:complexType name="KinematicType">
+    <xs:annotation>
+      <xs:documentation>Kinematic equipment of an entity archetype (mandatory, exactly one). It relies on a library
+        kinematic definition, whose default values it may override.</xs:documentation>
+    </xs:annotation>
+    <xs:group ref="x:EquipmentContent"/>
+    <xs:attribute name="definition" type="x:IdentifierType" use="required"/>
+  </xs:complexType>
+
+  <!-- ================================================================== -->
+  <!-- Entities                                                           -->
+  <!-- ================================================================== -->
+
+  <xs:simpleType name="DisEntityTypeType">
+    <xs:annotation>
+      <xs:documentation>DIS entity type (IEEE 1278.1, Entity Type Record) in dotted notation
+        Kind.Domain.Country.Category.Subcategory.Specific.Extra, e.g. 1.1.225.1.0.0.0.
+        Country is 16 bits, the other fields are 8 bits. Same notation as XCGF.ArchetypeEditor.</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:pattern value="(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.(6553[0-5]|655[0-2][0-9]|65[0-4][0-9]{2}|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{0,3}|0)\.(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="EnvironmentType">
+    <xs:annotation>
+      <xs:documentation>Operating environment, aligned with the DIS domain (like EntityEnvironment in XCGF.ArchetypeEditor).</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Other"/>
+      <xs:enumeration value="Land"/>
+      <xs:enumeration value="Air"/>
+      <xs:enumeration value="Surface"/>
+      <xs:enumeration value="Subsurface"/>
+      <xs:enumeration value="Space"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="EntityType">
+    <xs:annotation>
+      <xs:documentation>Entity (platform) archetype: container of equipments, identified by a unique name,
+        with a mandatory kinematic equipment.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="Description" type="xs:string" minOccurs="0"/>
+      <xs:element name="Kinematic" type="x:KinematicType"/>
+      <xs:element name="Parameters" type="x:DataItemsType" minOccurs="0"/>
+      <xs:element name="Equipments" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Equipment" type="x:EquipmentType" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="Tasks" type="x:TasksType" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="name" type="x:IdentifierType" use="required"/>
+    <xs:attribute name="disType" type="x:DisEntityTypeType" use="required"/>
+    <xs:attribute name="environment" type="x:EnvironmentType" use="optional"/>
+    <xs:attribute name="folder" type="xs:string" use="optional">
+      <xs:annotation><xs:documentation>Classification in the library, segments separated by '/' (e.g. Platforms/Armored).</xs:documentation></xs:annotation>
+    </xs:attribute>
+    <xs:attributeGroup ref="x:FileRootAttributes"/>
+  </xs:complexType>
+
+  <xs:element name="Entity" type="x:EntityType">
+    <xs:annotation><xs:documentation>Entity; can be a file on its own.</xs:documentation></xs:annotation>
+    <!-- Equipment name unique within its entity. -->
+    <xs:unique name="EquipmentNameUnique">
+      <xs:selector xpath="x:Equipments/x:Equipment"/>
+      <xs:field xpath="@name"/>
+    </xs:unique>
+  </xs:element>
+
+  <xs:element name="Entities" type="x:EntitiesType"/>
+
+  <xs:complexType name="EntitiesType">
+    <xs:sequence>
+      <xs:element ref="x:Entity" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attributeGroup ref="x:FileRootAttributes"/>
+  </xs:complexType>
+
+  <!-- ================================================================== -->
+  <!-- Units                                                              -->
+  <!-- ================================================================== -->
+
+  <xs:complexType name="EntityRefType">
+    <xs:attribute name="entity" type="x:IdentifierType" use="required">
+      <xs:annotation><xs:documentation>Name of an entity archetype declared in Entities.</xs:documentation></xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="count" type="xs:positiveInteger" use="optional" default="1">
+      <xs:annotation><xs:documentation>Number of entities of this archetype in the unit.</xs:documentation></xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="role" type="xs:string" use="optional">
+      <xs:annotation><xs:documentation>Role in the unit (e.g. Leader, Wingman).</xs:documentation></xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <xs:complexType name="UnitRefType">
+    <xs:attribute name="unit" type="x:IdentifierType" use="required">
+      <xs:annotation><xs:documentation>Name of a unit archetype declared in Units.</xs:documentation></xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="count" type="xs:positiveInteger" use="optional" default="1">
+      <xs:annotation><xs:documentation>Number of sub-units of this archetype.</xs:documentation></xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="role" type="xs:string" use="optional"/>
+  </xs:complexType>
+
+  <xs:complexType name="UnitType">
+    <xs:annotation>
+      <xs:documentation>Unit archetype: composition of entity archetypes (EntityRef) and unit archetypes
+        (UnitRef, sub-units), each with a headcount (count).</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="Description" type="xs:string" minOccurs="0"/>
+      <xs:element name="EntityRef" type="x:EntityRefType" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="UnitRef" type="x:UnitRefType" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="Tasks" type="x:TasksType" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="name" type="x:IdentifierType" use="required"/>
+    <xs:attribute name="folder" type="xs:string" use="optional">
+      <xs:annotation><xs:documentation>Classification in the library, segments separated by '/'.</xs:documentation></xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <xs:element name="Units" type="x:UnitsType"/>
+
+  <xs:complexType name="UnitsType">
+    <xs:sequence>
+      <xs:element name="Unit" type="x:UnitType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attributeGroup ref="x:FileRootAttributes"/>
+  </xs:complexType>
+
+</xs:schema>

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Data types, modelled on the HLA OMT 1516-2010. -->
+<DataTypes xmlns="urn:xcgf:data:1.0">
+  <BasicData name="HLAinteger32BE" size="32" interpretation="Signed integer" endian="Big" encoding="32-bit two's complement"/>
+  <BasicData name="HLAfloat64BE" size="64" interpretation="Double-precision floating point" endian="Big" encoding="IEEE 754"/>
+  <BasicData name="HLAoctet" size="8" interpretation="Byte" endian="Big" encoding="8 bits"/>
+
+  <SimpleData name="AngleDegrees" representation="HLAfloat64BE" units="deg" resolution="0.01" accuracy="0.01"/>
+  <SimpleData name="DistanceMeters" representation="HLAfloat64BE" units="m" resolution="0.1" accuracy="1"/>
+  <SimpleData name="SpeedMetersPerSecond" representation="HLAfloat64BE" units="m/s" resolution="0.01" accuracy="0.1"/>
+  <SimpleData name="DurationSeconds" representation="HLAfloat64BE" units="s" resolution="1" accuracy="1"/>
+  <SimpleData name="Count" representation="HLAinteger32BE" units="NA"/>
+
+  <EnumeratedData name="HLAboolean" representation="HLAinteger32BE">
+    <Enumerator name="HLAfalse" value="0"/>
+    <Enumerator name="HLAtrue" value="1"/>
+  </EnumeratedData>
+
+  <EnumeratedData name="RadarModeEnum" representation="HLAinteger32BE">
+    <Enumerator name="Off" value="0"/>
+    <Enumerator name="Search" value="1"/>
+    <Enumerator name="Track" value="2"/>
+  </EnumeratedData>
+
+  <EnumeratedData name="FormationEnum" representation="HLAinteger32BE">
+    <Enumerator name="Line" value="0"/>
+    <Enumerator name="Trail" value="1"/>
+    <Enumerator name="Echelon" value="2"/>
+    <Enumerator name="Wedge" value="3"/>
+    <Enumerator name="Spread" value="4"/>
+  </EnumeratedData>
+
+  <ArrayData name="HLAASCIIstring" dataType="HLAoctet" cardinality="Dynamic" encoding="HLAvariableArray"/>
+
+  <FixedRecordData name="GeoPosition">
+    <Semantics>WGS84 geodetic position (altitude in metres).</Semantics>
+    <Field name="Latitude" dataType="AngleDegrees"/>
+    <Field name="Longitude" dataType="AngleDegrees"/>
+    <Field name="Altitude" dataType="DistanceMeters"/>
+  </FixedRecordData>
+
+  <FixedRecordData name="GeoPoint2D">
+    <Semantics>WGS84 geographic point without altitude.</Semantics>
+    <Field name="Latitude" dataType="AngleDegrees"/>
+    <Field name="Longitude" dataType="AngleDegrees"/>
+  </FixedRecordData>
+
+  <FixedRecordData name="Orientation">
+    <Semantics>Heading [0, 360), pitch [-90, 90], roll [-180, 180], in degrees.</Semantics>
+    <Field name="Heading" dataType="AngleDegrees"/>
+    <Field name="Pitch" dataType="AngleDegrees"/>
+    <Field name="Roll" dataType="AngleDegrees"/>
+  </FixedRecordData>
+
+  <FixedRecordData name="FlightPlanWaypoint">
+    <Field name="Position" dataType="GeoPosition"/>
+    <Field name="Speed" dataType="SpeedMetersPerSecond"/>
+  </FixedRecordData>
+
+  <ArrayData name="FlightPlan" dataType="FlightPlanWaypoint" cardinality="1..100" encoding="HLAvariableArray"/>
+
+  <!-- References to instances (XCGF extension): the archetype declares the data item, the target instance is chosen in the scenario. -->
+  <ReferenceData name="EntityReference" target="Entity"/>
+  <ReferenceData name="EquipmentReference" target="Equipment"/>
+  <ReferenceData name="UnitReference" target="Unit"/>
+</DataTypes>
