@@ -22,7 +22,7 @@
   global elements, so each one can be the root of a file that validates on its own. An XcgfData
   document assembles them with XInclude (xi:include); every reference constraint (types,
   equipment definitions, entities) is checked on the assembled document:
-    xmllint -xinclude -noout -schema schemas/xcgf-data.xsd examples/bibliotheque/bibliotheque.xml
+    xmllint -xinclude -noout -schema schemas/xcgf-data.xsd examples/library/library.xml
 
   Extensible constraints: every constraint is an element of the x:Constraint substitution
   group. A third-party schema can add new ones by deriving x:ConstraintType; CustomConstraint
