@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Data types, modelled on the HLA OMT 1516-2010. -->
+<!-- XCGF standard library: core data types, modelled on the HLA OMT 1516-2010. -->
 <DataTypes xmlns="urn:xcgf:data:1.0">
   <BasicData name="HLAinteger32BE" size="32" interpretation="Signed integer" endian="Big" encoding="32-bit two's complement"/>
   <BasicData name="HLAfloat64BE" size="64" interpretation="Double-precision floating point" endian="Big" encoding="IEEE 754"/>

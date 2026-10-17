@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  XCGF standard library: sensor definitions.
+  Sensor derives into Radar, ESM, InfraredSensor and VisualSensor, following the sensor data of
+  CMO (see docs/cmo-mapping.md). Concrete sensors derive from these definitions.
+-->
+<EquipmentLibrary xmlns="urn:xcgf:data:1.0">
+
+  <EquipmentDefinition name="Sensor" type="Sensor">
+    <Description>Base sensor: role, generation, coverage (ranges, altitudes, arcs), scan rate and capabilities.</Description>
+    <TechnologicalData>
+      <Parameter name="Role" dataType="SensorRoleEnum"><DefaultValue>Other</DefaultValue></Parameter>
+      <Parameter name="Generation" dataType="SensorGenerationEnum"/>
+      <Parameter name="MinRange" dataType="DistanceMeters">
+        <DefaultValue>0</DefaultValue>
+        <Constraints>
+          <Min value="0"/>
+          <Max ref="MaxRange"/>
+        </Constraints>
+      </Parameter>
+      <Parameter name="MaxRange" dataType="DistanceMeters">
+        <Constraints><Min value="0" inclusive="false"/></Constraints>
+      </Parameter>
+      <Parameter name="MinAltitude" dataType="DistanceMeters">
+        <Constraints><Max ref="MaxAltitude"/></Constraints>
+      </Parameter>
+      <Parameter name="MaxAltitude" dataType="DistanceMeters"/>
+      <Parameter name="ScanInterval" dataType="DurationSeconds">
+        <Constraints><Min value="0"/></Constraints>
+      </Parameter>
+      <Parameter name="Capabilities" dataType="SensorCapabilities"/>
+      <!-- Sectors where the sensor detects; all around when absent. -->
+      <Parameter name="DetectionArcs" dataType="SensorArcs"/>
+      <Parameter name="MaxContacts" dataType="Count">
+        <Constraints><Min value="0"/></Constraints>
+      </Parameter>
+    </TechnologicalData>
+    <InitializationData>
+      <Parameter name="Operational" dataType="HLAboolean"><DefaultValue>HLAtrue</DefaultValue></Parameter>
+    </InitializationData>
+  </EquipmentDefinition>
+
+  <EquipmentDefinition name="Radar" base="Sensor" type="Radar">
+    <Description>Active radar: emission (power, gain, pulse), reception (noise, processing gain) and resolutions.</Description>
+    <TechnologicalData>
+      <Parameter name="FrequencyBands" dataType="NatoBands"/>
+      <Parameter name="PeakPower" dataType="PowerWatts">
+        <Constraints><Min value="0" inclusive="false"/></Constraints>
+      </Parameter>
+      <Parameter name="AntennaGain" dataType="Decibels"/>
+      <Parameter name="HorizontalBeamwidth" dataType="AngleDegrees">
+        <Constraints>
+          <Min value="0" inclusive="false"/>
+          <Max value="360"/>
+        </Constraints>
+      </Parameter>
+      <Parameter name="VerticalBeamwidth" dataType="AngleDegrees">
+        <Constraints>
+          <Min value="0" inclusive="false"/>
+          <Max value="180"/>
+        </Constraints>
+      </Parameter>
+      <Parameter name="PulseWidth" dataType="ShortDurationSeconds">
+        <Constraints><Min value="0" inclusive="false"/></Constraints>
+      </Parameter>
+      <Parameter name="PulseRepetitionFrequency" dataType="FrequencyHertz">
+        <Constraints><Min value="0" inclusive="false"/></Constraints>
+      </Parameter>
+      <Parameter name="SystemNoiseLevel" dataType="Decibels"/>
+      <Parameter name="ProcessingGain" dataType="Decibels"/>
+      <Parameter name="RangeResolution" dataType="DistanceMeters">
+        <Constraints><Min value="0"/></Constraints>
+      </Parameter>
+      <Parameter name="AngularResolution" dataType="AngleDegrees">
+        <Constraints><Min value="0"/></Constraints>
+      </Parameter>
+      <Parameter name="Features" dataType="RadarFeatures"/>
+      <!-- Sectors where the radar can track or illuminate (fire control); DetectionArcs when absent. -->
+      <Parameter name="TrackingArcs" dataType="SensorArcs"/>
+      <Parameter name="MaxIlluminatedTargets" dataType="Count">
+        <DefaultValue>0</DefaultValue>
+        <Constraints><Min value="0"/></Constraints>
+      </Parameter>
+    </TechnologicalData>
+    <InitializationData>
+      <Parameter name="Mode" dataType="RadarModeEnum"><DefaultValue>Off</DefaultValue></Parameter>
+    </InitializationData>
+  </EquipmentDefinition>
+
+  <EquipmentDefinition name="ESM" base="Sensor" type="ESM">
+    <Description>Passive electronic support measures (including radar warning receivers): detects and identifies emitters.</Description>
+    <TechnologicalData>
+      <Parameter name="FrequencyBands" dataType="NatoBands"/>
+      <Parameter name="Sensitivity" dataType="PowerDecibelMilliwatts"/>
+      <Parameter name="BearingAccuracy" dataType="AngleDegrees">
+        <Constraints><Min value="0"/></Constraints>
+      </Parameter>
+      <Parameter name="EmitterIdentification" dataType="HLAboolean"><DefaultValue>HLAtrue</DefaultValue></Parameter>
+    </TechnologicalData>
+  </EquipmentDefinition>
+
+  <EquipmentDefinition name="InfraredSensor" base="Sensor" type="Infrared">
+    <Description>Passive infrared sensor (IRST, FLIR, missile approach warner). Its detection range applies to the infrared signature of the target.</Description>
+    <TechnologicalData>
+      <Parameter name="Band" dataType="InfraredBandEnum"><DefaultValue>MidWave</DefaultValue></Parameter>
+      <Parameter name="Imaging" dataType="HLAboolean"><DefaultValue>HLAfalse</DefaultValue></Parameter>
+      <Parameter name="FieldOfView" dataType="AngleDegrees">
+        <Constraints>
+          <Min value="0" inclusive="false"/>
+          <Max value="360"/>
+        </Constraints>
+      </Parameter>
+    </TechnologicalData>
+  </EquipmentDefinition>
+
+  <EquipmentDefinition name="VisualSensor" base="Sensor" type="Visual">
+    <Description>Visual or electro-optical sensor (eye, TV camera). Its detection range applies to the visual signature of the target.</Description>
+    <TechnologicalData>
+      <Parameter name="NightCapable" dataType="HLAboolean"><DefaultValue>HLAfalse</DefaultValue></Parameter>
+      <Parameter name="FieldOfView" dataType="AngleDegrees">
+        <Constraints>
+          <Min value="0" inclusive="false"/>
+          <Max value="360"/>
+        </Constraints>
+      </Parameter>
+    </TechnologicalData>
+  </EquipmentDefinition>
+
+</EquipmentLibrary>

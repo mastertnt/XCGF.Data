@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  XCGF standard library: data types used by the standard equipment definitions
+  (fixed-wing kinematic, signatures, sensors). Values are in SI units; the CMO importer
+  converts from CMO units (knots, feet, nautical miles, kg/min...). See docs/cmo-mapping.md.
+-->
+<DataTypes xmlns="urn:xcgf:data:1.0">
+
+  <!-- Scalars ============================================================ -->
+
+  <SimpleData name="MassKilograms" representation="HLAfloat64BE" units="kg" resolution="0.1" accuracy="1"/>
+  <SimpleData name="MassFlowKilogramsPerSecond" representation="HLAfloat64BE" units="kg/s" resolution="0.001" accuracy="0.001"/>
+  <SimpleData name="ForceNewtons" representation="HLAfloat64BE" units="N" resolution="1" accuracy="1"/>
+  <SimpleData name="AreaSquareMeters" representation="HLAfloat64BE" units="m2" resolution="0.0001" accuracy="0.0001">
+    <Semantics>Area, notably radar cross section (1 m2 = 0 dBsm).</Semantics>
+  </SimpleData>
+  <SimpleData name="PowerWatts" representation="HLAfloat64BE" units="W" resolution="1" accuracy="1"/>
+  <SimpleData name="FrequencyHertz" representation="HLAfloat64BE" units="Hz" resolution="1" accuracy="1"/>
+  <SimpleData name="Decibels" representation="HLAfloat64BE" units="dB" resolution="0.1" accuracy="0.1"/>
+  <SimpleData name="PowerDecibelMilliwatts" representation="HLAfloat64BE" units="dBm" resolution="0.1" accuracy="0.1"/>
+  <SimpleData name="ShortDurationSeconds" representation="HLAfloat64BE" units="s" resolution="0.000000001" accuracy="0.000000001">
+    <Semantics>Short duration, such as a radar pulse width.</Semantics>
+  </SimpleData>
+  <SimpleData name="Rating" representation="HLAfloat64BE" units="NA" resolution="0.1" accuracy="0.1">
+    <Semantics>Dimensionless rating on a tool-defined scale (e.g. CMO agility).</Semantics>
+  </SimpleData>
+  <SimpleData name="Ratio" representation="HLAfloat64BE" units="NA" resolution="0.001" accuracy="0.001">
+    <Semantics>Dimensionless ratio, 1 meaning 100 %.</Semantics>
+  </SimpleData>
+
+  <!-- Fixed-wing kinematic =============================================== -->
+
+  <EnumeratedData name="ThrottleEnum" representation="HLAinteger32BE">
+    <Semantics>Throttle settings of a performance table, named as in CMO. Full is the maximum dry
+      (military) power, Flank the maximum power with afterburner (or emergency power).</Semantics>
+    <Enumerator name="Loiter" value="0"/>
+    <Enumerator name="Cruise" value="1"/>
+    <Enumerator name="Full" value="2"/>
+    <Enumerator name="Flank" value="3"/>
+  </EnumeratedData>
+
+  <EnumeratedData name="EngineTypeEnum" representation="HLAinteger32BE">
+    <Enumerator name="Piston" value="0"/>
+    <Enumerator name="Turboprop" value="1"/>
+    <Enumerator name="Turbojet" value="2"/>
+    <Enumerator name="Turbofan" value="3"/>
+    <Enumerator name="Electric" value="4"/>
+    <Enumerator name="Rocket" value="5"/>
+  </EnumeratedData>
+
+  <EnumeratedData name="FuelTypeEnum" representation="HLAinteger32BE">
+    <Enumerator name="AviationFuel" value="0"/>
+    <Enumerator name="Gasoline" value="1"/>
+    <Enumerator name="Diesel" value="2"/>
+    <Enumerator name="Battery" value="3"/>
+  </EnumeratedData>
+
+  <FixedRecordData name="PerformancePoint">
+    <Semantics>One row of a performance table: speed and fuel consumption reached in an altitude band at a throttle setting.</Semantics>
+    <Field name="MinAltitude" dataType="DistanceMeters"/>
+    <Field name="MaxAltitude" dataType="DistanceMeters"/>
+    <Field name="Throttle" dataType="ThrottleEnum"/>
+    <Field name="Speed" dataType="SpeedMetersPerSecond"/>
+    <Field name="FuelConsumption" dataType="MassFlowKilogramsPerSecond"/>
+  </FixedRecordData>
+
+  <ArrayData name="PerformanceTable" dataType="PerformancePoint" cardinality="1..64" encoding="HLAvariableArray"/>
+
+  <!-- Signatures ========================================================= -->
+
+  <FixedRecordData name="AspectDetectionRange">
+    <Semantics>Range at which a reference sensor detects the platform, seen from each aspect (CMO visual and infrared signatures).</Semantics>
+    <Field name="Front" dataType="DistanceMeters"/>
+    <Field name="Side" dataType="DistanceMeters"/>
+    <Field name="Rear" dataType="DistanceMeters"/>
+    <Field name="Top" dataType="DistanceMeters"/>
+  </FixedRecordData>
+
+  <FixedRecordData name="AspectRadarCrossSection">
+    <Semantics>Radar cross section seen from each aspect.</Semantics>
+    <Field name="Front" dataType="AreaSquareMeters"/>
+    <Field name="Side" dataType="AreaSquareMeters"/>
+    <Field name="Rear" dataType="AreaSquareMeters"/>
+    <Field name="Top" dataType="AreaSquareMeters"/>
+  </FixedRecordData>
+
+  <FixedRecordData name="Dimensions">
+    <Field name="Length" dataType="DistanceMeters"/>
+    <Field name="Span" dataType="DistanceMeters"/>
+    <Field name="Height" dataType="DistanceMeters"/>
+  </FixedRecordData>
+
+  <!-- Sensors ============================================================ -->
+
+  <EnumeratedData name="SensorGenerationEnum" representation="HLAinteger32BE">
+    <Semantics>Technology generation, used by CMO to scale detection performance (notably infrared and visual).</Semantics>
+    <Enumerator name="Early1950s" value="0"/>
+    <Enumerator name="Late1950s" value="1"/>
+    <Enumerator name="Early1960s" value="2"/>
+    <Enumerator name="Late1960s" value="3"/>
+    <Enumerator name="Early1970s" value="4"/>
+    <Enumerator name="Late1970s" value="5"/>
+    <Enumerator name="Early1980s" value="6"/>
+    <Enumerator name="Late1980s" value="7"/>
+    <Enumerator name="Early1990s" value="8"/>
+    <Enumerator name="Late1990s" value="9"/>
+    <Enumerator name="Early2000s" value="10"/>
+    <Enumerator name="Late2000s" value="11"/>
+    <Enumerator name="Early2010s" value="12"/>
+    <Enumerator name="Late2010s" value="13"/>
+    <Enumerator name="Early2020s" value="14"/>
+  </EnumeratedData>
+
+  <EnumeratedData name="SensorRoleEnum" representation="HLAinteger32BE">
+    <Enumerator name="Other" value="0"/>
+    <Enumerator name="AirSearch" value="1"/>
+    <Enumerator name="SurfaceSearch" value="2"/>
+    <Enumerator name="AirAndSurfaceSearch" value="3"/>
+    <Enumerator name="FireControl" value="4"/>
+    <Enumerator name="Navigation" value="5"/>
+    <Enumerator name="TerrainFollowing" value="6"/>
+    <Enumerator name="GroundMapping" value="7"/>
+    <Enumerator name="Weather" value="8"/>
+    <Enumerator name="RadarWarningReceiver" value="9"/>
+    <Enumerator name="ElectronicSupport" value="10"/>
+    <Enumerator name="InfraredSearchAndTrack" value="11"/>
+    <Enumerator name="TargetingPod" value="12"/>
+    <Enumerator name="MissileApproachWarning" value="13"/>
+  </EnumeratedData>
+
+  <EnumeratedData name="SensorCapabilityEnum" representation="HLAinteger32BE">
+    <Semantics>What a sensor can detect and what it reports about a contact (CMO sensor capabilities).</Semantics>
+    <Enumerator name="AirSearch" value="0"/>
+    <Enumerator name="SurfaceSearch" value="1"/>
+    <Enumerator name="LandSearch" value="2"/>
+    <Enumerator name="PeriscopeSearch" value="3"/>
+    <Enumerator name="RangeInformation" value="4"/>
+    <Enumerator name="HeadingInformation" value="5"/>
+    <Enumerator name="SpeedInformation" value="6"/>
+    <Enumerator name="AltitudeInformation" value="7"/>
+    <Enumerator name="Classification" value="8"/>
+    <Enumerator name="Identification" value="9"/>
+    <Enumerator name="TargetIllumination" value="10"/>
+  </EnumeratedData>
+
+  <ArrayData name="SensorCapabilities" dataType="SensorCapabilityEnum" cardinality="Dynamic" encoding="HLAvariableArray"/>
+
+  <EnumeratedData name="NatoBandEnum" representation="HLAinteger32BE">
+    <Semantics>NATO frequency bands: A 0-250 MHz, B 250-500 MHz, C 0.5-1 GHz, D 1-2 GHz, E 2-3 GHz,
+      F 3-4 GHz, G 4-6 GHz, H 6-8 GHz, I 8-10 GHz, J 10-20 GHz, K 20-40 GHz, L 40-60 GHz, M 60-100 GHz.</Semantics>
+    <Enumerator name="A" value="0"/>
+    <Enumerator name="B" value="1"/>
+    <Enumerator name="C" value="2"/>
+    <Enumerator name="D" value="3"/>
+    <Enumerator name="E" value="4"/>
+    <Enumerator name="F" value="5"/>
+    <Enumerator name="G" value="6"/>
+    <Enumerator name="H" value="7"/>
+    <Enumerator name="I" value="8"/>
+    <Enumerator name="J" value="9"/>
+    <Enumerator name="K" value="10"/>
+    <Enumerator name="L" value="11"/>
+    <Enumerator name="M" value="12"/>
+  </EnumeratedData>
+
+  <ArrayData name="NatoBands" dataType="NatoBandEnum" cardinality="1..13" encoding="HLAvariableArray"/>
+
+  <EnumeratedData name="InfraredBandEnum" representation="HLAinteger32BE">
+    <Enumerator name="NearInfrared" value="0"/>
+    <Enumerator name="ShortWave" value="1"/>
+    <Enumerator name="MidWave" value="2"/>
+    <Enumerator name="LongWave" value="3"/>
+    <Enumerator name="DualBand" value="4"/>
+  </EnumeratedData>
+
+  <EnumeratedData name="RadarFeatureEnum" representation="HLAinteger32BE">
+    <Semantics>Radar processing features (CMO sensor codes).</Semantics>
+    <Enumerator name="PulseDoppler" value="0"/>
+    <Enumerator name="LookDownShootDown" value="1"/>
+    <Enumerator name="TrackWhileScan" value="2"/>
+    <Enumerator name="MovingTargetIndicator" value="3"/>
+    <Enumerator name="SyntheticAperture" value="4"/>
+    <Enumerator name="InverseSyntheticAperture" value="5"/>
+    <Enumerator name="ActiveElectronicallyScanned" value="6"/>
+    <Enumerator name="PassiveElectronicallyScanned" value="7"/>
+    <Enumerator name="FrequencyAgility" value="8"/>
+    <Enumerator name="LowProbabilityOfIntercept" value="9"/>
+    <Enumerator name="NonCooperativeTargetRecognition" value="10"/>
+  </EnumeratedData>
+
+  <ArrayData name="RadarFeatures" dataType="RadarFeatureEnum" cardinality="Dynamic" encoding="HLAvariableArray"/>
+
+  <FixedRecordData name="SensorArc">
+    <Semantics>Angular sector covered by a sensor, relative to the platform heading (azimuth clockwise from the nose,
+      from AzimuthStart to AzimuthEnd) and to its horizontal plane (elevation).</Semantics>
+    <Field name="AzimuthStart" dataType="AngleDegrees"/>
+    <Field name="AzimuthEnd" dataType="AngleDegrees"/>
+    <Field name="ElevationMin" dataType="AngleDegrees"/>
+    <Field name="ElevationMax" dataType="AngleDegrees"/>
+  </FixedRecordData>
+
+  <ArrayData name="SensorArcs" dataType="SensorArc" cardinality="Dynamic" encoding="HLAvariableArray"/>
+
+</DataTypes>
