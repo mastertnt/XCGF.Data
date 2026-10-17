@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <DataTypes xmlns="urn:xcgf:data:1.0">
-  <Description>Data types of the example library, modelled on the HLA OMT (IEEE 1516-2010), plus the XCGF ReferenceData extension.</Description>
+  <Description>XCGF standard library: core data types, modelled on the HLA OMT (IEEE 1516-2010), plus the XCGF ReferenceData extension.</Description>
 
   <BasicData name="HLAinteger32BE" size="32" interpretation="Signed integer" endian="Big" encoding="32-bit two's complement">
     <Semantics>32-bit signed integer, big-endian (HLA standard representation).</Semantics>

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<EquipmentLibrary xmlns="urn:xcgf:data:1.0">
+  <Description>XCGF standard library: kinematic definitions. Fixed-wing data follow the aircraft performance data of Command: Modern Operations (CMO), so that a CMO importer maps them one to one (see docs/cmo-mapping.md).</Description>
+
+  <KinematicDefinition name="Kinematic">
+    <Description>Root kinematic. Every kinematic derives from it and inherits its position and orientation.</Description>
+    <InitializationData>
+      <Parameter name="Position" dataType="GeoPosition">
+        <Description>Position of the entity when it is created.</Description>
+      </Parameter>
+      <Parameter name="Orientation" dataType="Orientation">
+        <Description>Heading, pitch and roll of the entity when it is created.</Description>
+      </Parameter>
+    </InitializationData>
+  </KinematicDefinition>
+
+  <KinematicDefinition name="FixedWingKinematic" base="Kinematic">
+    <Description>Fixed-wing aircraft kinematic. Speeds and fuel consumption come from a performance table (altitude band x throttle setting), as in CMO; the other data bound or complete it.</Description>
+    <TechnologicalData>
+      <Parameter name="EmptyMass" dataType="MassKilograms">
+        <Description>Mass of the aircraft without fuel nor payload.</Description>
+        <Constraints><Min value="0" inclusive="false"/></Constraints>
+      </Parameter>
+      <Parameter name="MaxTakeoffMass" dataType="MassKilograms">
+        <Description>Highest mass at which the aircraft can take off, fuel and payload included.</Description>
+        <Constraints><Min ref="EmptyMass"/></Constraints>
+      </Parameter>
+      <Parameter name="EngineType" dataType="EngineTypeEnum">
+        <Description>Kind of engines propelling the aircraft.</Description>
+        <DefaultValue>Turbofan</DefaultValue>
+      </Parameter>
+      <Parameter name="EngineCount" dataType="Count">
+        <Description>Number of engines.</Description>
+        <DefaultValue>1</DefaultValue>
+        <Constraints><Min value="1"/></Constraints>
+      </Parameter>
+      <Parameter name="DryThrust" dataType="ForceNewtons">
+        <Description>Thrust of one engine at maximum dry power (Full throttle).</Description>
+        <Constraints><Min value="0"/></Constraints>
+      </Parameter>
+      <Parameter name="AfterburnerThrust" dataType="ForceNewtons">
+        <Description>Thrust of one engine with afterburner (Flank throttle); equal to the dry thrust without afterburner.</Description>
+        <Constraints><Min ref="DryThrust"/></Constraints>
+      </Parameter>
+      <Parameter name="FuelType" dataType="FuelTypeEnum">
+        <Description>Fuel burnt by the engines.</Description>
+        <DefaultValue>AviationFuel</DefaultValue>
+      </Parameter>
+      <Parameter name="FuelCapacity" dataType="MassKilograms">
+        <Description>Internal fuel capacity. External tanks are separate equipments.</Description>
+        <Constraints><Min value="0"/></Constraints>
+      </Parameter>
+      <Parameter name="PerformanceTable" dataType="PerformanceTable">
+        <Description>Speed and fuel consumption for each altitude band and throttle setting. The kinematic interpolates between bands.</Description>
+      </Parameter>
+      <Parameter name="StallSpeed" dataType="SpeedMetersPerSecond">
+        <Description>Lowest speed at which the aircraft keeps flying. The kinematic never flies slower.</Description>
+        <Constraints><Min value="0" inclusive="false"/></Constraints>
+      </Parameter>
+      <Parameter name="MaxSpeed" dataType="SpeedMetersPerSecond">
+        <Description>Highest speed the aircraft can reach. The kinematic never flies faster.</Description>
+        <Constraints><Min ref="StallSpeed"/></Constraints>
+      </Parameter>
+      <Parameter name="ClimbRate" dataType="SpeedMetersPerSecond">
+        <Description>Highest vertical speed in climb.</Description>
+        <Constraints><Min value="0" inclusive="false"/></Constraints>
+      </Parameter>
+      <Parameter name="Ceiling" dataType="DistanceMeters">
+        <Description>Highest altitude the aircraft can reach. Movement orders above it are capped.</Description>
+        <Constraints><Min value="0" inclusive="false"/></Constraints>
+      </Parameter>
+      <Parameter name="Agility" dataType="Rating">
+        <Description>Manoeuvrability rating, as in CMO: the higher, the better the aircraft turns and evades.</Description>
+        <DefaultValue>3</DefaultValue>
+        <Constraints><Min value="0"/></Constraints>
+      </Parameter>
+      <Parameter name="MinRunwayLength" dataType="DistanceMeters">
+        <Description>Shortest runway the aircraft can take off from and land on.</Description>
+        <Constraints><Min value="0"/></Constraints>
+      </Parameter>
+    </TechnologicalData>
+    <InitializationData>
+      <Parameter name="InitialSpeed" dataType="SpeedMetersPerSecond">
+        <Description>Speed of the aircraft when it is created, bounded by the stall speed and the maximum speed.</Description>
+        <Constraints>
+          <Min ref="StallSpeed"/>
+          <Max ref="MaxSpeed"/>
+        </Constraints>
+      </Parameter>
+      <Parameter name="InitialThrottle" dataType="ThrottleEnum">
+        <Description>Throttle setting when the aircraft is created.</Description>
+        <DefaultValue>Cruise</DefaultValue>
+      </Parameter>
+      <Parameter name="InitialFuel" dataType="MassKilograms">
+        <Description>Fuel on board when the aircraft is created, bounded by the fuel capacity.</Description>
+        <Constraints>
+          <Min value="0"/>
+          <Max ref="FuelCapacity"/>
+        </Constraints>
+      </Parameter>
+    </InitializationData>
+  </KinematicDefinition>
+
+</EquipmentLibrary>
