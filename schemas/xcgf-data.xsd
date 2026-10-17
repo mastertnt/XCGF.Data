@@ -24,6 +24,10 @@
   equipment definitions, entities) is checked on the assembled document:
     xmllint -xinclude -noout -schema schemas/xcgf-data.xsd examples/library/library.xml
 
+  Standard library: library/ holds the XCGF core data types and the standard equipment
+  definitions (kinematics, signatures, sensors), modelled on Command: Modern Operations
+  (docs/cmo-mapping.md). Concrete archetypes derive from them with @base.
+
   Extensible constraints: every constraint is an element of the x:Constraint substitution
   group. A third-party schema can add new ones by deriving x:ConstraintType; CustomConstraint
   covers one-off needs without a new schema. Triggers follow the same principle (x:Trigger).
@@ -75,7 +79,7 @@
 
     <!-- Every @dataType reference must name a declared type. -->
     <xs:keyref name="DataTypeRef" refer="x:DataTypeKey">
-      <xs:selector xpath="x:DataTypes/x:ArrayData|.//x:Field|.//x:Alternative|.//x:Parameter"/>
+      <xs:selector xpath="x:DataTypes/x:ArrayData|x:DataTypes/x:FixedRecordData/x:Field|x:DataTypes/x:VariantRecordData/x:Alternative|.//x:Parameter"/>
       <xs:field xpath="@dataType"/>
     </xs:keyref>
 
@@ -446,6 +450,30 @@
     </xs:sequence>
   </xs:complexType>
 
+  <xs:complexType name="ValueType" mixed="true">
+    <xs:annotation>
+      <xs:documentation>Value of a data item, written according to its data type:
+        - simple or enumerated type: the text itself (e.g. 250, HLAtrue, Search);
+        - fixed record: one Field child per record field, by name;
+        - variant record: the discriminant and the selected alternative, as Field children;
+        - array: one Item child per element, in order.
+        Field and Item are themselves values, so records and arrays nest. Checking a value against
+        its data type is done by the tool.</xs:documentation>
+    </xs:annotation>
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="Field">
+        <xs:complexType mixed="true">
+          <xs:complexContent>
+            <xs:extension base="x:ValueType">
+              <xs:attribute name="name" type="x:IdentifierType" use="required"/>
+            </xs:extension>
+          </xs:complexContent>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="Item" type="x:ValueType"/>
+    </xs:choice>
+  </xs:complexType>
+
   <xs:complexType name="DataItemType">
     <xs:annotation>
       <xs:documentation>Typed data item (equipment, task, entity): optional default value and constraints.
@@ -453,7 +481,7 @@
         with the same name overrides the default value or adds to the inherited constraints.</xs:documentation>
     </xs:annotation>
     <xs:sequence>
-      <xs:element name="DefaultValue" type="xs:string" minOccurs="0"/>
+      <xs:element name="DefaultValue" type="x:ValueType" minOccurs="0"/>
       <xs:element name="Constraints" type="x:ConstraintsType" minOccurs="0"/>
     </xs:sequence>
     <xs:attribute name="name" type="x:IdentifierType" use="required"/>
