@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  XCGF standard library: signature definitions.
+  A signature is the equipment that tells how detectable its platform is. Aircraft signatures follow
+  CMO: visual and infrared detection ranges and two radar cross sections (bands A-D and E-M), each
+  given for the front, side, rear and top aspects (see docs/cmo-mapping.md).
+-->
+<EquipmentLibrary xmlns="urn:xcgf:data:1.0">
+
+  <EquipmentDefinition name="Signature" type="Signature">
+    <Description>Base signature: physical dimensions of the platform.</Description>
+    <TechnologicalData>
+      <Parameter name="Dimensions" dataType="Dimensions"/>
+    </TechnologicalData>
+  </EquipmentDefinition>
+
+  <EquipmentDefinition name="AircraftSignature" base="Signature">
+    <Description>Aircraft signature: visual, infrared and radar, per aspect.</Description>
+    <TechnologicalData>
+      <Parameter name="Visual" dataType="AspectDetectionRange">
+        <Constraints><Min value="0"/></Constraints>
+      </Parameter>
+      <Parameter name="Infrared" dataType="AspectDetectionRange">
+        <Constraints><Min value="0"/></Constraints>
+      </Parameter>
+      <Parameter name="RadarCrossSectionAToD" dataType="AspectRadarCrossSection">
+        <Constraints><Min value="0"/></Constraints>
+      </Parameter>
+      <Parameter name="RadarCrossSectionEToM" dataType="AspectRadarCrossSection">
+        <Constraints><Min value="0"/></Constraints>
+      </Parameter>
+    </TechnologicalData>
+  </EquipmentDefinition>
+
+</EquipmentLibrary>
