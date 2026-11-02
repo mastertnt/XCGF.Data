@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DataTypes xmlns="urn:xcgf:data:1.0">
+  <Description>Data types of the example library, modelled on the HLA OMT (IEEE 1516-2010), plus the XCGF ReferenceData extension.</Description>
+
+  <BasicData name="HLAinteger32BE" size="32" interpretation="Signed integer" endian="Big" encoding="32-bit two's complement">
+    <Semantics>32-bit signed integer, big-endian (HLA standard representation).</Semantics>
+  </BasicData>
+  <BasicData name="HLAfloat64BE" size="64" interpretation="Double-precision floating point" endian="Big" encoding="IEEE 754">
+    <Semantics>64-bit IEEE 754 floating point number, big-endian (HLA standard representation).</Semantics>
+  </BasicData>
+  <BasicData name="HLAoctet" size="8" interpretation="Byte" endian="Big" encoding="8 bits">
+    <Semantics>Single byte (HLA standard representation).</Semantics>
+  </BasicData>
+
+  <SimpleData name="AngleDegrees" representation="HLAfloat64BE" units="deg" resolution="0.01" accuracy="0.01">
+    <Semantics>Angle in degrees (latitude, longitude, heading, field of view...).</Semantics>
+  </SimpleData>
+  <SimpleData name="DistanceMeters" representation="HLAfloat64BE" units="m" resolution="0.1" accuracy="1">
+    <Semantics>Distance or altitude in metres.</Semantics>
+  </SimpleData>
+  <SimpleData name="SpeedMetersPerSecond" representation="HLAfloat64BE" units="m/s" resolution="0.01" accuracy="0.1">
+    <Semantics>Speed in metres per second.</Semantics>
+  </SimpleData>
+  <SimpleData name="DurationSeconds" representation="HLAfloat64BE" units="s" resolution="1" accuracy="1">
+    <Semantics>Duration in seconds.</Semantics>
+  </SimpleData>
+  <SimpleData name="Count" representation="HLAinteger32BE" units="NA">
+    <Semantics>Number of items (shots, waypoints...), without unit.</Semantics>
+  </SimpleData>
+
+  <EnumeratedData name="HLAboolean" representation="HLAinteger32BE">
+    <Semantics>Boolean value (HLA standard enumeration).</Semantics>
+    <Enumerator name="HLAfalse" value="0"><Semantics>False.</Semantics></Enumerator>
+    <Enumerator name="HLAtrue" value="1"><Semantics>True.</Semantics></Enumerator>
+  </EnumeratedData>
+
+  <EnumeratedData name="RadarModeEnum" representation="HLAinteger32BE">
+    <Semantics>Operating mode of a radar.</Semantics>
+    <Enumerator name="Off" value="0"><Semantics>Radar switched off: no emission, no detection.</Semantics></Enumerator>
+    <Enumerator name="Search" value="1"><Semantics>Volume search: scans the field of view to detect new contacts.</Semantics></Enumerator>
+    <Enumerator name="Track" value="2"><Semantics>Tracking: follows designated contacts accurately enough to guide a weapon.</Semantics></Enumerator>
+  </EnumeratedData>
+
+  <EnumeratedData name="FormationEnum" representation="HLAinteger32BE">
+    <Semantics>Geometric arrangement of the members of a unit.</Semantics>
+    <Enumerator name="Line" value="0"><Semantics>Line abreast: members side by side.</Semantics></Enumerator>
+    <Enumerator name="Trail" value="1"><Semantics>Trail: members one behind the other.</Semantics></Enumerator>
+    <Enumerator name="Echelon" value="2"><Semantics>Echelon: members staggered diagonally on one side.</Semantics></Enumerator>
+    <Enumerator name="Wedge" value="3"><Semantics>Wedge: V shape with the leader at the front.</Semantics></Enumerator>
+    <Enumerator name="Spread" value="4"><Semantics>Spread: wide lateral spacing for mutual support.</Semantics></Enumerator>
+  </EnumeratedData>
+
+  <ArrayData name="HLAASCIIstring" dataType="HLAoctet" cardinality="Dynamic" encoding="HLAvariableArray">
+    <Semantics>Variable-length ASCII character string (HLA standard array).</Semantics>
+  </ArrayData>
+
+  <FixedRecordData name="GeoPosition">
+    <Semantics>WGS84 geodetic position (altitude in metres).</Semantics>
+    <Field name="Latitude" dataType="AngleDegrees"><Semantics>Latitude, in [-90, 90].</Semantics></Field>
+    <Field name="Longitude" dataType="AngleDegrees"><Semantics>Longitude, in [-180, 180].</Semantics></Field>
+    <Field name="Altitude" dataType="DistanceMeters"><Semantics>Altitude above mean sea level.</Semantics></Field>
+  </FixedRecordData>
+
+  <FixedRecordData name="GeoPoint2D">
+    <Semantics>WGS84 geographic point without altitude.</Semantics>
+    <Field name="Latitude" dataType="AngleDegrees"><Semantics>Latitude, in [-90, 90].</Semantics></Field>
+    <Field name="Longitude" dataType="AngleDegrees"><Semantics>Longitude, in [-180, 180].</Semantics></Field>
+  </FixedRecordData>
+
+  <FixedRecordData name="Orientation">
+    <Semantics>Attitude of an entity, in degrees.</Semantics>
+    <Field name="Heading" dataType="AngleDegrees"><Semantics>Heading from true north, clockwise, in [0, 360).</Semantics></Field>
+    <Field name="Pitch" dataType="AngleDegrees"><Semantics>Pitch, positive nose up, in [-90, 90].</Semantics></Field>
+    <Field name="Roll" dataType="AngleDegrees"><Semantics>Roll, positive right wing down, in [-180, 180].</Semantics></Field>
+  </FixedRecordData>
+
+  <FixedRecordData name="FlightPlanWaypoint">
+    <Semantics>Point of a flight plan, with the speed to hold when flying towards it.</Semantics>
+    <Field name="Position" dataType="GeoPosition"><Semantics>Position of the waypoint.</Semantics></Field>
+    <Field name="Speed" dataType="SpeedMetersPerSecond"><Semantics>Speed to hold on the leg ending at this waypoint.</Semantics></Field>
+  </FixedRecordData>
+
+  <ArrayData name="FlightPlan" dataType="FlightPlanWaypoint" cardinality="1..100" encoding="HLAvariableArray">
+    <Semantics>Ordered list of waypoints flown one after the other.</Semantics>
+  </ArrayData>
+
+  <ReferenceData name="EntityReference" target="Entity">
+    <Semantics>Reference to an entity instance. The archetype only declares the data item; the target instance is chosen in the scenario.</Semantics>
+  </ReferenceData>
+  <ReferenceData name="EquipmentReference" target="Equipment">
+    <Semantics>Reference to an equipment instance, chosen in the scenario.</Semantics>
+  </ReferenceData>
+  <ReferenceData name="UnitReference" target="Unit">
+    <Semantics>Reference to a unit instance, chosen in the scenario.</Semantics>
+  </ReferenceData>
+</DataTypes>

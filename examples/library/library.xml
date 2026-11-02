@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XcgfData xmlns="urn:xcgf:data:1.0"
+          xmlns:xi="http://www.w3.org/2001/XInclude"
+          version="1.0">
+  <Description>Example archetype library split into files and assembled with XInclude.</Description>
+  <xi:include href="types.xml"/>
+  <xi:include href="equipments.xml"/>
+  <xi:include href="tasks.xml"/>
+  <Entities>
+    <xi:include href="entities/fighter.xml"/>
+  </Entities>
+  <xi:include href="units.xml"/>
+</XcgfData>
