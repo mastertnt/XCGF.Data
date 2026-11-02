@@ -9,9 +9,13 @@
   <xi:include href="../../library/equipments/signatures.xml"/>
   <xi:include href="../../library/equipments/sensors.xml"/>
   <xi:include href="equipments.xml"/>
+  <xi:include href="equipments-rafale.xml"/>
+  <xi:include href="equipments-f35.xml"/>
   <xi:include href="tasks.xml"/>
   <Entities>
     <xi:include href="entities/fighter.xml"/>
+    <xi:include href="entities/rafale.xml"/>
+    <xi:include href="entities/f35a.xml"/>
   </Entities>
   <xi:include href="units.xml"/>
 </XcgfData>
