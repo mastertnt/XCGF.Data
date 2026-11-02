@@ -17,8 +17,12 @@ The schema describes **archetypes only** (entity, equipment, unit and task types
 | `docs/cmo-mapping.md` | Mapping of the standard equipments to the Command: Modern Operations (CMO) database, for a future importer. |
 | `examples/library/library.xml` | Example library, assembled from the standard library and the files below with XInclude. |
 | `examples/library/equipments.xml` | Example equipments deriving from the standard library: fighter kinematic, signature, radar, RWR, IRST, and an air-to-air missile. |
+| `examples/library/equipments-rafale.xml` | Dassault Rafale C equipments: kinematic, signature, RBE2 radar, SPECTRA ESM and missile warner, OSF IRST (open-source approximations). |
+| `examples/library/equipments-f35.xml` | Lockheed Martin F-35A equipments: kinematic, signature, AN/APG-81 radar, AN/ASQ-239 ESM, AN/AAQ-37 DAS, AN/AAQ-40 EOTS (open-source approximations). |
 | `examples/library/tasks.xml` | Tasks: MoveTo, FireOnTarget, FollowFlightPlan, ChangeFormation. |
 | `examples/library/entities/fighter.xml` | Fighter aircraft archetype with its signature, sensors and two missiles. |
+| `examples/library/entities/rafale.xml` | Rafale C archetype with its signature and sensors. |
+| `examples/library/entities/f35a.xml` | F-35A archetype with its signature and sensors. |
 | `examples/library/units.xml` | Patrol of two fighters. |
 
 ## Model
