@@ -1,33 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-  XCGF.Data: schema describing XCGF archetypes.
-
-  The schema only describes archetypes (entity, equipment, unit and task types), never
-  instances: no actual position, no reference to a concrete instance. Any value carried by
-  a data item is therefore a default value (DefaultValue) that instantiation (the scenario)
-  may override.
-
-  The document describes:
-    - data types, modelled on the HLA OMT (IEEE 1516-2010);
-    - an equipment library (reusable definitions);
-    - entity archetypes (DIS type, unique name), containers of equipments, with a mandatory
-      kinematic equipment whose definition declares at least a position and an orientation;
-      definitions may derive from one another.
-      An entity equipment only exists inside its entity; it may rely on a library definition;
-    - unit archetypes, compositions of entity archetypes (and of sub-units);
-    - a task library (optional 5W parameters, an activation trigger, exit triggers),
-      referenced by equipments, entities and units.
-
-  Splitting into files: DataTypes, EquipmentLibrary, TaskLibrary, Entities, Entity and Units are
-  global elements, so each one can be the root of a file that validates on its own. An XcgfData
-  document assembles them with XInclude (xi:include); every reference constraint (types,
-  equipment definitions, entities) is checked on the assembled document:
-    xmllint -xinclude -noout -schema schemas/xcgf-data.xsd examples/library/library.xml
-
-  Extensible constraints: every constraint is an element of the x:Constraint substitution
-  group. A third-party schema can add new ones by deriving x:ConstraintType; CustomConstraint
-  covers one-off needs without a new schema. Triggers follow the same principle (x:Trigger).
--->
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
            xmlns:x="urn:xcgf:data:1.0"
            targetNamespace="urn:xcgf:data:1.0"
@@ -35,9 +6,41 @@
            attributeFormDefault="unqualified"
            version="1.0">
 
-  <!-- ================================================================== -->
-  <!-- Root                                                               -->
-  <!-- ================================================================== -->
+  <xs:annotation>
+    <xs:documentation>
+      XCGF.Data: schema describing XCGF archetypes.
+
+      The schema only describes archetypes (entity, equipment, unit and task types), never
+      instances: no actual position, no reference to a concrete instance. Any value carried by
+      a data item is therefore a default value (DefaultValue) that instantiation (the scenario)
+      may override.
+
+      The document describes:
+        - data types, modelled on the HLA OMT (IEEE 1516-2010);
+        - an equipment library (reusable definitions);
+        - entity archetypes (DIS type, unique name), containers of equipments, with a mandatory
+          kinematic equipment whose definition declares at least a position and an orientation;
+          definitions may derive from one another.
+          An entity equipment only exists inside its entity; it may rely on a library definition;
+        - unit archetypes, compositions of entity archetypes (and of sub-units);
+        - a task library (optional 5W parameters, an activation trigger, exit triggers),
+          referenced by equipments, entities and units.
+
+      Splitting into files: DataTypes, EquipmentLibrary, TaskLibrary, Entities, Entity and Units are
+      global elements, so each one can be the root of a file that validates on its own. An XcgfData
+      document assembles them with XInclude (xi:include); every reference constraint (types,
+      equipment definitions, entities) is checked on the assembled document:
+        xmllint -xinclude -noout -schema schemas/xcgf-data.xsd examples/library/library.xml
+
+      Extensible constraints: every constraint is an element of the x:Constraint substitution
+      group. A third-party schema can add new ones by deriving x:ConstraintType; CustomConstraint
+      covers one-off needs without a new schema. Triggers follow the same principle (x:Trigger).
+    </xs:documentation>
+  </xs:annotation>
+
+  <xs:annotation>
+    <xs:documentation>Section: Root</xs:documentation>
+  </xs:annotation>
 
   <xs:element name="XcgfData">
     <xs:annotation>
@@ -45,36 +48,41 @@
         which allows assembling a library split into several files.</xs:documentation>
     </xs:annotation>
     <xs:complexType>
-      <xs:choice minOccurs="0" maxOccurs="unbounded">
-        <xs:element ref="x:DataTypes"/>
-        <xs:element ref="x:EquipmentLibrary"/>
-        <xs:element ref="x:TaskLibrary"/>
-        <xs:element ref="x:Entities"/>
-        <xs:element ref="x:Units"/>
-      </xs:choice>
+      <xs:sequence>
+        <xs:element name="Description" type="xs:string" minOccurs="0">
+          <xs:annotation><xs:documentation>Content and purpose of the file or section.</xs:documentation></xs:annotation>
+        </xs:element>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+          <xs:element ref="x:DataTypes"/>
+          <xs:element ref="x:EquipmentLibrary"/>
+          <xs:element ref="x:TaskLibrary"/>
+          <xs:element ref="x:Entities"/>
+          <xs:element ref="x:Units"/>
+        </xs:choice>
+      </xs:sequence>
       <xs:attribute name="version" type="xs:string" use="optional"/>
     </xs:complexType>
 
-    <!-- Data type names: unique across all categories. -->
     <xs:key name="DataTypeKey">
+      <xs:annotation><xs:documentation>Data type names: unique across all categories.</xs:documentation></xs:annotation>
       <xs:selector xpath="x:DataTypes/x:BasicData|x:DataTypes/x:SimpleData|x:DataTypes/x:EnumeratedData|x:DataTypes/x:ArrayData|x:DataTypes/x:FixedRecordData|x:DataTypes/x:VariantRecordData|x:DataTypes/x:ReferenceData"/>
       <xs:field xpath="@name"/>
     </xs:key>
 
-    <!-- Basic data representations (targets of @representation). -->
     <xs:key name="BasicDataKey">
+      <xs:annotation><xs:documentation>Basic data representations (targets of @representation).</xs:documentation></xs:annotation>
       <xs:selector xpath="x:DataTypes/x:BasicData"/>
       <xs:field xpath="@name"/>
     </xs:key>
 
-    <!-- Enumerated types (targets of a variant record discriminant). -->
     <xs:key name="EnumeratedDataKey">
+      <xs:annotation><xs:documentation>Enumerated types (targets of a variant record discriminant).</xs:documentation></xs:annotation>
       <xs:selector xpath="x:DataTypes/x:EnumeratedData"/>
       <xs:field xpath="@name"/>
     </xs:key>
 
-    <!-- Every @dataType reference must name a declared type. -->
     <xs:keyref name="DataTypeRef" refer="x:DataTypeKey">
+      <xs:annotation><xs:documentation>Every @dataType reference must name a declared type.</xs:documentation></xs:annotation>
       <xs:selector xpath="x:DataTypes/x:ArrayData|.//x:Field|.//x:Alternative|.//x:Parameter"/>
       <xs:field xpath="@dataType"/>
     </xs:keyref>
@@ -89,8 +97,8 @@
       <xs:field xpath="@dataType"/>
     </xs:keyref>
 
-    <!-- Equipment definition name unique in the library. -->
     <xs:unique name="EquipmentLibraryNameUnique">
+      <xs:annotation><xs:documentation>Equipment definition name unique in the library.</xs:documentation></xs:annotation>
       <xs:selector xpath="x:EquipmentLibrary/x:EquipmentDefinition|x:EquipmentLibrary/x:KinematicDefinition"/>
       <xs:field xpath="@name"/>
     </xs:unique>
@@ -105,8 +113,8 @@
       <xs:field xpath="@name"/>
     </xs:key>
 
-    <!-- A definition only derives from a definition of the same kind. -->
     <xs:keyref name="EquipmentDefinitionBaseRef" refer="x:EquipmentDefinitionKey">
+      <xs:annotation><xs:documentation>A definition only derives from a definition of the same kind.</xs:documentation></xs:annotation>
       <xs:selector xpath="x:EquipmentLibrary/x:EquipmentDefinition"/>
       <xs:field xpath="@base"/>
     </xs:keyref>
@@ -116,58 +124,58 @@
       <xs:field xpath="@base"/>
     </xs:keyref>
 
-    <!-- An entity's kinematic relies on a kinematic definition. -->
     <xs:keyref name="KinematicDefinitionRef" refer="x:KinematicDefinitionKey">
+      <xs:annotation><xs:documentation>An entity's kinematic relies on a kinematic definition.</xs:documentation></xs:annotation>
       <xs:selector xpath="x:Entities/x:Entity/x:Kinematic"/>
       <xs:field xpath="@definition"/>
     </xs:keyref>
 
-    <!-- An entity equipment can only rely on an existing definition. -->
     <xs:keyref name="EquipmentDefinitionRef" refer="x:EquipmentDefinitionKey">
+      <xs:annotation><xs:documentation>An entity equipment can only rely on an existing definition.</xs:documentation></xs:annotation>
       <xs:selector xpath="x:Entities/x:Entity/x:Equipments/x:Equipment"/>
       <xs:field xpath="@definition"/>
     </xs:keyref>
 
-    <!-- Entity name unique across all entities of the document. -->
     <xs:key name="EntityNameKey">
+      <xs:annotation><xs:documentation>Entity name unique across all entities of the document.</xs:documentation></xs:annotation>
       <xs:selector xpath="x:Entities/x:Entity"/>
       <xs:field xpath="@name"/>
     </xs:key>
 
-    <!-- Unit archetype name unique. -->
     <xs:key name="UnitNameKey">
+      <xs:annotation><xs:documentation>Unit archetype name unique.</xs:documentation></xs:annotation>
       <xs:selector xpath="x:Units/x:Unit"/>
       <xs:field xpath="@name"/>
     </xs:key>
 
-    <!-- Task definition name unique in the library. -->
     <xs:key name="TaskDefinitionKey">
+      <xs:annotation><xs:documentation>Task definition name unique in the library.</xs:documentation></xs:annotation>
       <xs:selector xpath="x:TaskLibrary/x:TaskDefinition"/>
       <xs:field xpath="@name"/>
     </xs:key>
 
-    <!-- Equipments, entities and units only reference defined tasks. -->
     <xs:keyref name="TaskRef" refer="x:TaskDefinitionKey">
+      <xs:annotation><xs:documentation>Equipments, entities and units only reference defined tasks.</xs:documentation></xs:annotation>
       <xs:selector xpath=".//x:TaskRef"/>
       <xs:field xpath="@task"/>
     </xs:keyref>
 
-    <!-- A sub-unit names an existing unit archetype (cycles are detected by the tool). -->
     <xs:keyref name="UnitUnitRef" refer="x:UnitNameKey">
+      <xs:annotation><xs:documentation>A sub-unit names an existing unit archetype (cycles are detected by the tool).</xs:documentation></xs:annotation>
       <xs:selector xpath=".//x:UnitRef"/>
       <xs:field xpath="@unit"/>
     </xs:keyref>
 
-    <!-- A unit can only reference an existing entity archetype. -->
     <xs:keyref name="UnitEntityRef" refer="x:EntityNameKey">
+      <xs:annotation><xs:documentation>A unit can only reference an existing entity archetype.</xs:documentation></xs:annotation>
       <xs:selector xpath=".//x:EntityRef"/>
       <xs:field xpath="@entity"/>
     </xs:keyref>
   </xs:element>
 
-  <!-- ================================================================== -->
-  <!-- Common simple types                                                -->
-  <!-- ================================================================== -->
+  <xs:annotation>
+    <xs:documentation>Section: Common simple types</xs:documentation>
+  </xs:annotation>
 
   <xs:simpleType name="IdentifierType">
     <xs:annotation>
@@ -194,12 +202,12 @@
     </xs:restriction>
   </xs:simpleType>
 
-  <!-- ================================================================== -->
-  <!-- Data types (HLA OMT 1516-2010)                                     -->
-  <!-- ================================================================== -->
+  <xs:annotation>
+    <xs:documentation>Section: Data types (HLA OMT 1516-2010)</xs:documentation>
+  </xs:annotation>
 
-  <!-- xml:* attributes (notably xml:base, added by XInclude) on file roots. -->
   <xs:attributeGroup name="FileRootAttributes">
+    <xs:annotation><xs:documentation>xml:* attributes (notably xml:base, added by XInclude) on file roots.</xs:documentation></xs:annotation>
     <xs:anyAttribute namespace="http://www.w3.org/XML/1998/namespace" processContents="skip"/>
   </xs:attributeGroup>
 
@@ -209,15 +217,20 @@
     <xs:annotation>
       <xs:documentation>Type declarations, in any order.</xs:documentation>
     </xs:annotation>
-    <xs:choice minOccurs="0" maxOccurs="unbounded">
-      <xs:element name="BasicData" type="x:BasicDataType"/>
-      <xs:element name="SimpleData" type="x:SimpleDataType"/>
-      <xs:element name="EnumeratedData" type="x:EnumeratedDataType"/>
-      <xs:element name="ArrayData" type="x:ArrayDataType"/>
-      <xs:element name="FixedRecordData" type="x:FixedRecordDataType"/>
-      <xs:element name="VariantRecordData" type="x:VariantRecordDataType"/>
-      <xs:element name="ReferenceData" type="x:ReferenceDataType"/>
-    </xs:choice>
+    <xs:sequence>
+      <xs:element name="Description" type="xs:string" minOccurs="0">
+        <xs:annotation><xs:documentation>Content and purpose of the file or section.</xs:documentation></xs:annotation>
+      </xs:element>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element name="BasicData" type="x:BasicDataType"/>
+        <xs:element name="SimpleData" type="x:SimpleDataType"/>
+        <xs:element name="EnumeratedData" type="x:EnumeratedDataType"/>
+        <xs:element name="ArrayData" type="x:ArrayDataType"/>
+        <xs:element name="FixedRecordData" type="x:FixedRecordDataType"/>
+        <xs:element name="VariantRecordData" type="x:VariantRecordDataType"/>
+        <xs:element name="ReferenceData" type="x:ReferenceDataType"/>
+      </xs:choice>
+    </xs:sequence>
     <xs:attributeGroup ref="x:FileRootAttributes"/>
   </xs:complexType>
 
@@ -264,6 +277,9 @@
         <xs:sequence>
           <xs:element name="Enumerator" maxOccurs="unbounded">
             <xs:complexType>
+              <xs:sequence>
+                <xs:element name="Semantics" type="xs:string" minOccurs="0"/>
+              </xs:sequence>
               <xs:attribute name="name" type="x:IdentifierType" use="required"/>
               <xs:attribute name="value" type="xs:long" use="required"/>
             </xs:complexType>
@@ -353,11 +369,11 @@
     </xs:complexContent>
   </xs:complexType>
 
-  <!-- ================================================================== -->
-  <!-- Parameters and tasks                                               -->
-  <!-- ================================================================== -->
+  <xs:annotation>
+    <xs:documentation>Section: Parameters and tasks</xs:documentation>
+  </xs:annotation>
 
-  <!-- Constraints: extensible substitution group -->
+  <xs:annotation><xs:documentation>Constraints: extensible substitution group</xs:documentation></xs:annotation>
 
   <xs:complexType name="ArgumentType">
     <xs:attribute name="name" type="x:IdentifierType" use="required"/>
@@ -453,6 +469,9 @@
         with the same name overrides the default value or adds to the inherited constraints.</xs:documentation>
     </xs:annotation>
     <xs:sequence>
+      <xs:element name="Description" type="xs:string" minOccurs="0">
+        <xs:annotation><xs:documentation>Role of the data item: what it represents and how it is used.</xs:documentation></xs:annotation>
+      </xs:element>
       <xs:element name="DefaultValue" type="xs:string" minOccurs="0"/>
       <xs:element name="Constraints" type="x:ConstraintsType" minOccurs="0"/>
     </xs:sequence>
@@ -478,7 +497,7 @@
     </xs:sequence>
   </xs:complexType>
 
-  <!-- Triggers: extensible substitution group -->
+  <xs:annotation><xs:documentation>Triggers: extensible substitution group</xs:documentation></xs:annotation>
 
   <xs:complexType name="TriggerType" abstract="true">
     <xs:annotation>
@@ -594,7 +613,7 @@
     </xs:attribute>
   </xs:complexType>
 
-  <!-- Task parameters (5W) -->
+  <xs:annotation><xs:documentation>Task parameters (5W)</xs:documentation></xs:annotation>
 
   <xs:complexType name="TaskParameterType">
     <xs:annotation>
@@ -615,7 +634,7 @@
     </xs:sequence>
   </xs:complexType>
 
-  <!-- Task definition -->
+  <xs:annotation><xs:documentation>Task definition</xs:documentation></xs:annotation>
 
   <xs:complexType name="TaskDefinitionType">
     <xs:annotation>
@@ -668,9 +687,12 @@
     </xs:annotation>
     <xs:complexType>
       <xs:sequence>
+        <xs:element name="Description" type="xs:string" minOccurs="0">
+          <xs:annotation><xs:documentation>Content and purpose of the file or section.</xs:documentation></xs:annotation>
+        </xs:element>
         <xs:element name="TaskDefinition" type="x:TaskDefinitionType" minOccurs="0" maxOccurs="unbounded">
-          <!-- Parameter name unique within a task, across all 5W categories. -->
           <xs:unique name="TaskParameterNameUnique">
+            <xs:annotation><xs:documentation>Parameter name unique within a task, across all 5W categories.</xs:documentation></xs:annotation>
             <xs:selector xpath="x:WhoTasker/x:Parameter|x:WhoTaskee/x:Parameter|x:WhoAffected/x:Parameter|x:What/x:Parameter|x:When/x:Parameter|x:Where/x:Parameter|x:Why/x:Parameter"/>
             <xs:field xpath="@name"/>
           </xs:unique>
@@ -680,7 +702,7 @@
     </xs:complexType>
   </xs:element>
 
-  <!-- Task reference -->
+  <xs:annotation><xs:documentation>Task reference</xs:documentation></xs:annotation>
 
   <xs:complexType name="TaskRefType">
     <xs:annotation>
@@ -688,6 +710,9 @@
         definition. Optional Parameter elements set carrier-specific default values.</xs:documentation>
     </xs:annotation>
     <xs:sequence>
+      <xs:element name="Description" type="xs:string" minOccurs="0">
+        <xs:annotation><xs:documentation>Why the carrier offers this task, or how it adapts it.</xs:documentation></xs:annotation>
+      </xs:element>
       <xs:element name="Parameter" type="x:DataItemType" minOccurs="0" maxOccurs="unbounded"/>
     </xs:sequence>
     <xs:attribute name="task" type="x:IdentifierType" use="required"/>
@@ -699,9 +724,9 @@
     </xs:sequence>
   </xs:complexType>
 
-  <!-- ================================================================== -->
-  <!-- Equipments                                                         -->
-  <!-- ================================================================== -->
+  <xs:annotation>
+    <xs:documentation>Section: Equipments</xs:documentation>
+  </xs:annotation>
 
   <xs:group name="EquipmentContent">
     <xs:sequence>
@@ -758,10 +783,15 @@
       <xs:documentation>Equipment library; can be a file on its own.</xs:documentation>
     </xs:annotation>
     <xs:complexType>
-      <xs:choice minOccurs="0" maxOccurs="unbounded">
-        <xs:element name="EquipmentDefinition" type="x:EquipmentDefinitionType"/>
-        <xs:element name="KinematicDefinition" type="x:KinematicDefinitionType"/>
-      </xs:choice>
+      <xs:sequence>
+        <xs:element name="Description" type="xs:string" minOccurs="0">
+          <xs:annotation><xs:documentation>Content and purpose of the file or section.</xs:documentation></xs:annotation>
+        </xs:element>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+          <xs:element name="EquipmentDefinition" type="x:EquipmentDefinitionType"/>
+          <xs:element name="KinematicDefinition" type="x:KinematicDefinitionType"/>
+        </xs:choice>
+      </xs:sequence>
       <xs:attributeGroup ref="x:FileRootAttributes"/>
     </xs:complexType>
   </xs:element>
@@ -787,9 +817,9 @@
     <xs:attribute name="definition" type="x:IdentifierType" use="required"/>
   </xs:complexType>
 
-  <!-- ================================================================== -->
-  <!-- Entities                                                           -->
-  <!-- ================================================================== -->
+  <xs:annotation>
+    <xs:documentation>Section: Entities</xs:documentation>
+  </xs:annotation>
 
   <xs:simpleType name="DisEntityTypeType">
     <xs:annotation>
@@ -845,8 +875,8 @@
 
   <xs:element name="Entity" type="x:EntityType">
     <xs:annotation><xs:documentation>Entity; can be a file on its own.</xs:documentation></xs:annotation>
-    <!-- Equipment name unique within its entity. -->
     <xs:unique name="EquipmentNameUnique">
+      <xs:annotation><xs:documentation>Equipment name unique within its entity.</xs:documentation></xs:annotation>
       <xs:selector xpath="x:Equipments/x:Equipment"/>
       <xs:field xpath="@name"/>
     </xs:unique>
@@ -856,14 +886,17 @@
 
   <xs:complexType name="EntitiesType">
     <xs:sequence>
+      <xs:element name="Description" type="xs:string" minOccurs="0">
+        <xs:annotation><xs:documentation>Content and purpose of the file or section.</xs:documentation></xs:annotation>
+      </xs:element>
       <xs:element ref="x:Entity" minOccurs="0" maxOccurs="unbounded"/>
     </xs:sequence>
     <xs:attributeGroup ref="x:FileRootAttributes"/>
   </xs:complexType>
 
-  <!-- ================================================================== -->
-  <!-- Units                                                              -->
-  <!-- ================================================================== -->
+  <xs:annotation>
+    <xs:documentation>Section: Units</xs:documentation>
+  </xs:annotation>
 
   <xs:complexType name="EntityRefType">
     <xs:attribute name="entity" type="x:IdentifierType" use="required">
@@ -908,6 +941,9 @@
 
   <xs:complexType name="UnitsType">
     <xs:sequence>
+      <xs:element name="Description" type="xs:string" minOccurs="0">
+        <xs:annotation><xs:documentation>Content and purpose of the file or section.</xs:documentation></xs:annotation>
+      </xs:element>
       <xs:element name="Unit" type="x:UnitType" minOccurs="0" maxOccurs="unbounded"/>
     </xs:sequence>
     <xs:attributeGroup ref="x:FileRootAttributes"/>
