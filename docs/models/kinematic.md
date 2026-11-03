@@ -39,6 +39,36 @@ State of the equipment when the entity is created; the scenario usually sets it.
 - Neither has a default value: an archetype does not know where its instances will be. The
   scenario sets both when it creates the entity.
 
+## Dynamic behaviour (pseudo-code)
+
+Reference behaviour of the model during a simulation, written in the pseudo-code described in [Model interactions](interactions.md#pseudo-code-conventions). `data.X` is the resolved value of the data item `X`; functions and constants not given by the archetype (turn rate, detection threshold, weather...) belong to the simulation.
+
+- **Reads:** nothing.
+- **Read by:** every sensor of every entity (position and orientation of the carrier and of the targets), the signature of its entity (aspect), the tasks (`MoveTo`, `FollowFlightPlan`).
+
+```text
+state
+    position    : GeoPosition        # WGS84, altitude above mean sea level
+    orientation : Orientation        # heading, pitch, roll (degrees)
+    velocity    : Vector3            # m/s, local north-east-down frame; set by derived kinematics
+
+init(entity, data)
+    position    = data.Position      # required: the scenario must set it
+    orientation = data.Orientation   # required
+    velocity    = (0, 0, 0)
+    require -90 <= position.Latitude <= 90 and -180 <= position.Longitude <= 180
+    require 0 <= orientation.Heading < 360
+
+step(t, dt)
+    # the root kinematic does not move its entity
+    nothing
+
+# queries, read by the other models
+getPosition()    -> position
+getOrientation() -> orientation
+getVelocity()    -> velocity
+```
+
 ## Constraints and rules
 
 - The schema (`KinematicDefinitionType`) requires the root kinematic to declare `Position` and

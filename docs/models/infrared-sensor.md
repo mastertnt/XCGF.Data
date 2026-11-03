@@ -60,6 +60,31 @@ Declared by the base definitions and available in this model. A derived definiti
 - Detection range is the target's `Infrared` signature for the seen aspect, scaled by the sensor
   `Generation`, and limited by `MaxRange`.
 
+## Dynamic behaviour (pseudo-code)
+
+Reference behaviour of the model during a simulation, written in the pseudo-code described in [Model interactions](interactions.md#pseudo-code-conventions). `data.X` is the resolved value of the data item `X`; functions and constants not given by the archetype (turn rate, detection threshold, weather...) belong to the simulation.
+
+- **Reads:** its own kinematic; the kinematic and `AircraftSignature` (`Infrared`) of each target.
+- **Read by:** the tasks and triggers of its entity (contacts, missile warning).
+
+```text
+init(entity, data)
+    Sensor.init(entity, data)
+
+detect(target) -> bool
+    sig = target.equipmentOfType(Signature)
+    if sig is none: return false
+    Rref = sig.infraredRange(owner.kinematic.getPosition())        # range for the seen aspect
+    Rdet = Rref * generationFactor(data.Generation) * bandFactor(data.Band)
+    Rdet = Rdet * atmosphericFactor(weather, humidity)               # environment, not archetype data
+    return rangeTo(target) <= min(Rdet, data.MaxRange)
+
+report(target, t) -> Contact
+    c = Sensor.report(target, t)
+    if not data.Imaging: remove c.kind and c.type                   # a point detector cannot classify
+    return c
+```
+
 ## Constraints and rules
 
 - 0 < `FieldOfView` ≤ 360.
