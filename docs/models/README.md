@@ -3,7 +3,11 @@
 One page per model (equipment definition) of the XCGF standard library (`library/equipments/`).
 Each page gives the role of the model, its technological and initialization data with their types,
 units, default values and constraints, the data it inherits, its behaviour, the rules the tools
-check, how to derive a concrete model from it, and its mapping to the CMO database.
+check, its dynamic behaviour as pseudo-code (initialization, simulation step, queries), how to
+derive a concrete model from it, and its mapping to the CMO database.
+
+[Model interactions](interactions.md) shows how the models call one another during a simulation:
+who reads whom, the simulation loop, a worked example, and the pseudo-code conventions.
 
 ## Derivation tree
 

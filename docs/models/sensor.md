@@ -60,6 +60,75 @@ State of the equipment when the entity is created; the scenario usually sets it.
 - **`Operational`** (initialization) is false when the sensor is damaged or out of service when
   the entity is created.
 
+## Dynamic behaviour (pseudo-code)
+
+Reference behaviour of the model during a simulation, written in the pseudo-code described in [Model interactions](interactions.md#pseudo-code-conventions). `data.X` is the resolved value of the data item `X`; functions and constants not given by the archetype (turn rate, detection threshold, weather...) belong to the simulation.
+
+- **Reads:** the kinematic of its own entity (position, orientation for the arcs); the kinematics of the other entities.
+- **Read by:** the tasks and triggers of its entity, which read its contacts.
+
+```text
+state
+    operational : bool
+    contacts    : map<Entity, Contact>        # Contact = { lastSeen, reported fields }
+    nextScan    : map<Entity, time>
+
+init(entity, data)
+    owner       = entity
+    operational = data.Operational            # default true
+    contacts    = {}
+
+isActive() -> bool                            # redefined by the specialisations
+    return operational
+
+# geometric filter shared by every sensor
+inCoverage(target) -> bool
+    me  = owner.kinematic
+    it  = target.kinematic
+    r   = slantRange(me.getPosition(), it.getPosition())
+    if r < data.MinRange or r > data.MaxRange: return false
+    alt = it.getPosition().Altitude
+    if alt < data.MinAltitude or alt > data.MaxAltitude: return false
+    if data.DetectionArcs not empty and not inArcs(target, data.DetectionArcs): return false
+    return target.domain in searchDomains(data.Capabilities)   # AirSearch -> air, SurfaceSearch -> surface...
+
+# is the target inside one of the sectors, relative to the carrier heading and horizontal plane?
+inArcs(target, arcs) -> bool
+    me = owner.kinematic
+    (az, el) = relativeAngles(me.getPosition(), me.getOrientation(), target.kinematic.getPosition())
+    return some arc in arcs with az in [arc.AzimuthStart -> arc.AzimuthEnd] clockwise
+                              and arc.ElevationMin <= el <= arc.ElevationMax
+
+detect(target) -> bool                        # physics, redefined by each specialisation
+    return true
+
+step(t, dt)
+    if not isActive()
+        contacts.clear()
+        return
+    for target in world.entities except owner
+        if t < nextScan[target]: continue
+        nextScan[target] = t + data.ScanInterval
+        if inCoverage(target) and detect(target)
+            contacts[target] = report(target, t)
+        else if target in contacts and t - contacts[target].lastSeen > contactTimeout
+            contacts.remove(target)
+    keep the data.MaxContacts nearest contacts
+
+# what the sensor tells about a contact depends on its capabilities
+report(target, t) -> Contact
+    c = { lastSeen: t, bearing: bearingTo(target) }
+    if RangeInformation    in data.Capabilities: c.range    = rangeTo(target)
+    if HeadingInformation  in data.Capabilities: c.heading  = target.kinematic.getOrientation().Heading
+    if SpeedInformation    in data.Capabilities: c.speed    = |target.kinematic.getVelocity()|
+    if AltitudeInformation in data.Capabilities: c.altitude = target.kinematic.getPosition().Altitude
+    if Classification      in data.Capabilities: c.kind     = target.environment / category
+    if Identification      in data.Capabilities: c.type     = target.disType
+    return c
+
+getContacts() -> contacts                     # read by tasks (FireOnTarget) and triggers
+```
+
 ## Constraints and rules
 
 - 0 ≤ `MinRange` ≤ `MaxRange`, `MaxRange` > 0; `MinAltitude` ≤ `MaxAltitude`; `ScanInterval` ≥ 0;

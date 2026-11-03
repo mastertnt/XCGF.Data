@@ -56,6 +56,28 @@ Declared by the base definitions and available in this model. A derived definiti
 - Detection range is the target's `Visual` signature for the seen aspect (a daylight range),
   scaled by the sensor `Generation`, and limited by `MaxRange`.
 
+## Dynamic behaviour (pseudo-code)
+
+Reference behaviour of the model during a simulation, written in the pseudo-code described in [Model interactions](interactions.md#pseudo-code-conventions). `data.X` is the resolved value of the data item `X`; functions and constants not given by the archetype (turn rate, detection threshold, weather...) belong to the simulation.
+
+- **Reads:** its own kinematic; the kinematic and `AircraftSignature` (`Visual`) of each target.
+- **Read by:** the tasks and triggers of its entity.
+
+```text
+init(entity, data)
+    Sensor.init(entity, data)
+
+detect(target) -> bool
+    sig = target.equipmentOfType(Signature)
+    if sig is none: return false
+    Rref = sig.visualRange(owner.kinematic.getPosition())          # daylight range for the seen aspect
+    Rdet = Rref * generationFactor(data.Generation)
+    if isNight(world.time, owner.position)
+        Rdet = data.NightCapable ? Rdet * nightFactor : 0           # simulation constant
+    Rdet = Rdet * visibilityFactor(weather)                         # fog, clouds, rain
+    return rangeTo(target) <= min(Rdet, data.MaxRange)
+```
+
 ## Constraints and rules
 
 - 0 < `FieldOfView` ≤ 360.

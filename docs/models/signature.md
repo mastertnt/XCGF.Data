@@ -39,6 +39,26 @@ None declared by `Signature`.
   ([`AircraftSignature`](aircraft-signature.md) for aircraft; ships and submarines will add their
   sonar signatures the same way).
 
+## Dynamic behaviour (pseudo-code)
+
+Reference behaviour of the model during a simulation, written in the pseudo-code described in [Model interactions](interactions.md#pseudo-code-conventions). `data.X` is the resolved value of the data item `X`; functions and constants not given by the archetype (turn rate, detection threshold, weather...) belong to the simulation.
+
+- **Reads:** nothing.
+- **Read by:** sensors of the other entities, through the derived signatures.
+
+```text
+state
+    none                             # a signature is static: it only answers queries
+
+init(entity, data)
+    owner = entity                   # to read the owner's kinematic in the derived signatures
+
+step(t, dt)
+    nothing
+
+getDimensions() -> data.Dimensions   # used for visual size, collisions, deck spotting...
+```
+
 ## Constraints and rules
 
 - No constraint is declared on `Dimensions`; its fields are expected to be positive.

@@ -82,6 +82,82 @@ Declared by the base definitions and available in this model. A derived definiti
   the aircraft turns and evades.
 - All values are SI: masses in kg, speeds in m/s, thrust in N, fuel flow in kg/s, distances in m.
 
+## Dynamic behaviour (pseudo-code)
+
+Reference behaviour of the model during a simulation, written in the pseudo-code described in [Model interactions](interactions.md#pseudo-code-conventions). `data.X` is the resolved value of the data item `X`; functions and constants not given by the archetype (turn rate, detection threshold, weather...) belong to the simulation.
+
+- **Reads:** its own `Kinematic` state; orders from the tasks (`MoveTo`, `FollowFlightPlan`).
+- **Read by:** sensors of the other entities (position, altitude, speed of the target), the `AircraftSignature` of its entity (aspect), the tasks (arrival, remaining fuel).
+
+```text
+state                                    # in addition to Kinematic
+    speed      : m/s                     # true airspeed
+    throttle   : ThrottleEnum
+    fuel       : kg
+    mass       : kg
+    order      : { targetPosition?, targetAltitude?, targetSpeed?, targetHeading? }   # set by tasks
+
+init(entity, data)
+    Kinematic.init(entity, data)
+    throttle = data.InitialThrottle                              # default Cruise
+    fuel     = data.InitialFuel ?? data.FuelCapacity
+    speed    = data.InitialSpeed ?? perf(altitude(), throttle).speed
+    speed    = clamp(speed, data.StallSpeed, data.MaxSpeed)
+    mass     = data.EmptyMass + fuel                             # + payload when weapons are modelled
+    require mass <= data.MaxTakeoffMass
+    velocity = speed along orientation.Heading, orientation.Pitch
+
+# speed and fuel flow for an altitude and a throttle setting, from the performance table
+perf(alt, setting) -> (speed, flow)
+    rows = data.PerformanceTable where row.Throttle == setting, sorted by MinAltitude
+    if alt inside one row band: return (row.Speed, row.FuelConsumption)
+    # between or outside bands: linear interpolation on the middle altitude of the two nearest bands,
+    # clamped to the lowest and highest band
+    return interpolate(rows, alt)
+
+# order coming from a task (MoveTo, FollowFlightPlan leg...)
+setOrder(order)
+    order.targetAltitude = min(order.targetAltitude, data.Ceiling)
+    order.targetSpeed    = clamp(order.targetSpeed ?? perf(altitude(), Cruise).speed,
+                                 data.StallSpeed, data.MaxSpeed)
+    # lowest setting able to hold the requested speed: Loiter < Cruise < Full < Flank
+    throttle = first s in [Loiter, Cruise, Full, Flank] with perf(altitude(), s).speed >= order.targetSpeed
+               else Flank
+
+step(t, dt)
+    if fuel <= 0
+        throttle = none                                      # engines stop
+        speed    = max(speed - glideDeceleration * dt, data.StallSpeed)
+        climb    = -glideSinkRate                            # simulation constants, not archetype data
+    else
+        (vMax, flow) = perf(altitude(), throttle)
+        thrust  = data.EngineCount * (throttle == Flank ? data.AfterburnerThrust : data.DryThrust)
+        accel   = thrust / mass                              # simplified: drag folded into vMax
+        target  = min(order.targetSpeed, vMax, data.MaxSpeed)
+        speed   = approach(speed, target, accel * dt)
+        speed   = max(speed, data.StallSpeed)
+        climb   = clamp((order.targetAltitude - altitude()) / dt, -data.ClimbRate, data.ClimbRate)
+        fuel    = max(0, fuel - flow * dt)
+
+    # turn towards the ordered heading; turn rate grows with Agility, shrinks with speed
+    turnRate = turnRateOf(data.Agility, speed)               # simulation function
+    heading  = turnTowards(orientation.Heading, bearingTo(order.targetPosition) ?? order.targetHeading,
+                           turnRate * dt)
+    orientation = (heading, pitchFrom(climb, speed), bankFrom(turnRate, speed))
+
+    position  = geodesicMove(position, heading, horizontalSpeed(speed, climb) * dt)
+    position.Altitude = min(position.Altitude + climb * dt, data.Ceiling)
+    velocity  = vectorOf(speed, heading, orientation.Pitch)
+    mass      = data.EmptyMass + fuel
+
+    if order.targetPosition reached: notify tasks (exit trigger of MoveTo, next leg of FollowFlightPlan)
+
+# queries, in addition to Kinematic's
+getSpeed() -> speed
+getFuel()  -> fuel
+getThrottle() -> throttle
+```
+
 ## Constraints and rules
 
 - Chain of bounds between data items: `EmptyMass` ≤ `MaxTakeoffMass`; `DryThrust` ≤

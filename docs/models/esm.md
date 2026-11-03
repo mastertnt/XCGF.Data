@@ -61,6 +61,45 @@ Declared by the base definitions and available in this model. A derived definiti
 - **`EmitterIdentification`** tells whether the receiver identifies the type of the intercepted
   emitter (default true).
 
+## Dynamic behaviour (pseudo-code)
+
+Reference behaviour of the model during a simulation, written in the pseudo-code described in [Model interactions](interactions.md#pseudo-code-conventions). `data.X` is the resolved value of the data item `X`; functions and constants not given by the archetype (turn rate, detection threshold, weather...) belong to the simulation.
+
+- **Reads:** its own kinematic; the kinematic of each target and the radars it carries (`isEmitting`, bands, power, gain).
+- **Read by:** the tasks and triggers of its entity (threat warning, emitter bearing).
+
+```text
+init(entity, data)
+    Sensor.init(entity, data)
+
+isActive() -> operational                      # passive: always listening, never emitting
+
+detect(target) -> bool
+    found = false
+    for emitter in target.equipmentsOfType(Radar) where emitter.isEmitting()
+        common = emitter.data.FrequencyBands ∩ data.FrequencyBands
+        if common is empty: continue
+        R      = rangeTo(target)
+        lambda = speedOfLight / centerFrequency(mainBand(common))
+        inBeam = emitter.inArcs(owner, emitter.data.DetectionArcs ?? all around)
+        gainTx = inBeam ? emitter.data.AntennaGain : sidelobeGain     # sidelobeGain: simulation constant
+        # one-way propagation: the ESM hears a radar much farther than the radar sees it
+        received_dBm = dBm(emitter.data.PeakPower) + gainTx - dB((4*pi*R / lambda)^2)
+        if LowProbabilityOfIntercept in emitter.data.Features: received_dBm -= lpiLoss
+        if received_dBm >= data.Sensitivity
+            remember(emitter)
+            found = true
+    return found
+
+report(target, t) -> Contact
+    c = Sensor.report(target, t)
+    c.bearing = trueBearing(target) + gaussian(0, data.BearingAccuracy)
+    c.range   = unknown                         # bearing only, whatever the capabilities
+    c.emitters = remembered emitters of target,
+                 identified by definition name if data.EmitterIdentification else by band only
+    return c
+```
+
 ## Constraints and rules
 
 - `BearingAccuracy` ≥ 0.

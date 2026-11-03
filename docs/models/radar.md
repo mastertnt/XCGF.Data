@@ -84,6 +84,60 @@ Declared by the base definitions and available in this model. A derived definiti
 - **`Mode`** (initialization) is `Off`, `Search` or `Track` when the entity is created. The
   default `Off` keeps the platform silent (emission control).
 
+## Dynamic behaviour (pseudo-code)
+
+Reference behaviour of the model during a simulation, written in the pseudo-code described in [Model interactions](interactions.md#pseudo-code-conventions). `data.X` is the resolved value of the data item `X`; functions and constants not given by the archetype (turn rate, detection threshold, weather...) belong to the simulation.
+
+- **Reads:** its own kinematic; the kinematic and `AircraftSignature` of each target (radar cross section).
+- **Read by:** the `ESM` of the other entities (it is an emitter when not `Off`); the weapons and the `FireOnTarget` task (illumination).
+
+```text
+state                                          # in addition to Sensor
+    mode        : RadarModeEnum
+    illuminated : set<Entity>
+
+init(entity, data)
+    Sensor.init(entity, data)
+    mode        = data.Mode                    # default Off (emission control)
+    illuminated = {}
+
+isActive()   -> operational and mode != Off
+isEmitting() -> operational and mode != Off    # read by the ESM of the other entities
+
+detect(target) -> bool
+    sig = target.equipmentOfType(Signature)
+    if sig is none: return false
+    band = mainBand(data.FrequencyBands)
+    rcs  = sig.radarCrossSection(owner.kinematic.getPosition(), band)
+    R    = rangeTo(target)
+    lambda = speedOfLight / centerFrequency(band)
+    # monostatic radar equation, in decibels
+    snr = dB(data.PeakPower) + 2 * data.AntennaGain + dB(rcs) + dB(lambda^2)
+          - dB((4*pi)^3) - 4 * dB(R) + data.ProcessingGain
+          - (thermalNoise(data.PulseWidth) + data.SystemNoiseLevel)
+    if target is low and over land/sea and LookDownShootDown not in data.Features
+        snr -= clutterLoss                     # simulation constant
+    return snr >= detectionThreshold            # simulation constant, e.g. 13 dB
+
+# order from a task or a weapon: track / illuminate a contact for guidance
+illuminate(target) -> bool
+    if mode != Track or target not in contacts: return false
+    arcs = data.TrackingArcs ?? data.DetectionArcs
+    if not inArcs(target, arcs): return false
+    if |illuminated| >= data.MaxIlluminatedTargets: return false
+    illuminated.add(target)
+    return true
+
+step(t, dt)
+    Sensor.step(t, dt)
+    illuminated = illuminated ∩ contacts       # lost contacts are no longer illuminated
+    merge contacts closer than data.RangeResolution in range and data.AngularResolution in bearing
+
+setMode(newMode)                               # from a task
+    mode = newMode
+    if mode != Track: illuminated.clear()
+```
+
 ## Constraints and rules
 
 - `PeakPower`, `PulseWidth`, `PulseRepetitionFrequency` > 0; 0 < `HorizontalBeamwidth` ≤ 360;

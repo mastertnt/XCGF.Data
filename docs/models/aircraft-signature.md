@@ -56,6 +56,40 @@ Declared by the base definitions and available in this model. A derived definiti
 - The detection model itself (how a sensor combines its data with these values) belongs to the
   simulation, not to the archetype.
 
+## Dynamic behaviour (pseudo-code)
+
+Reference behaviour of the model during a simulation, written in the pseudo-code described in [Model interactions](interactions.md#pseudo-code-conventions). `data.X` is the resolved value of the data item `X`; functions and constants not given by the archetype (turn rate, detection threshold, weather...) belong to the simulation.
+
+- **Reads:** the kinematic of its own entity (position, orientation), to find the aspect seen by an observer.
+- **Read by:** `Radar` (radar cross section), `InfraredSensor` (`Infrared`), `VisualSensor` (`Visual`) of the other entities.
+
+```text
+init(entity, data)
+    Signature.init(entity, data)
+
+# which face of the aircraft an observer sees
+aspect(observerPosition) -> Front | Side | Rear | Top
+    k   = owner.kinematic
+    los = lineOfSight(k.getPosition(), observerPosition)     # bearing and elevation from the aircraft
+    elevation = los.elevation - k.getOrientation().Pitch
+    if abs(elevation) > topThreshold: return Top              # simulation constant, e.g. 60 degrees
+    rel = normalize360(los.bearing - k.getOrientation().Heading)
+    if rel <= 45 or rel >= 315: return Front
+    if 135 <= rel <= 225:       return Rear
+    return Side
+
+radarCrossSection(observerPosition, band) -> m2
+    table = band in [A, B, C, D] ? data.RadarCrossSectionAToD : data.RadarCrossSectionEToM
+    return table[aspect(observerPosition)]
+
+infraredRange(observerPosition) -> m
+    return data.Infrared[aspect(observerPosition)]
+    # possible extension: increase when the owner's throttle is Flank (afterburner plume)
+
+visualRange(observerPosition) -> m
+    return data.Visual[aspect(observerPosition)]
+```
+
 ## Constraints and rules
 
 - Every signature value is ≥ 0. The `Min` constraint is set on a record: it applies to each of
