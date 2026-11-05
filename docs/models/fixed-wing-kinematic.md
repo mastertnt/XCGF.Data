@@ -86,7 +86,7 @@ Declared by the base definitions and available in this model. A derived definiti
 
 Reference behaviour of the model during a simulation, written in the pseudo-code described in [Model interactions](interactions.md#pseudo-code-conventions). `data.X` is the resolved value of the data item `X`; functions and constants not given by the archetype (turn rate, detection threshold, weather...) belong to the simulation.
 
-- **Reads:** its own `Kinematic` state; orders from the tasks (`MoveTo`, `FollowFlightPlan`).
+- **Reads:** its own `Kinematic` state; orders from the movement tasks (`MoveTo`, `FollowCourse`, `Orbit`, `SetAltitude`... see [kinematic tasks](../tasks/kinematics.md)).
 - **Read by:** sensors of the other entities (position, altitude, speed of the target), the `AircraftSignature` of its entity (aspect), the tasks (arrival, remaining fuel).
 
 ```text
@@ -115,7 +115,7 @@ perf(alt, setting) -> (speed, flow)
     # clamped to the lowest and highest band
     return interpolate(rows, alt)
 
-# order coming from a task (MoveTo, FollowFlightPlan leg...)
+# order coming from a task (MoveTo, FollowCourse leg, Orbit...)
 setOrder(order)
     order.targetAltitude = min(order.targetAltitude, data.Ceiling)
     order.targetSpeed    = clamp(order.targetSpeed ?? perf(altitude(), Cruise).speed,
@@ -150,7 +150,7 @@ step(t, dt)
     velocity  = vectorOf(speed, heading, orientation.Pitch)
     mass      = data.EmptyMass + fuel
 
-    if order.targetPosition reached: notify tasks (exit trigger of MoveTo, next leg of FollowFlightPlan)
+    if order.targetPosition reached: notify tasks (exit trigger of MoveTo, next leg of FollowCourse)
 
 # queries, in addition to Kinematic's
 getSpeed() -> speed

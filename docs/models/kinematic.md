@@ -44,7 +44,7 @@ State of the equipment when the entity is created; the scenario usually sets it.
 Reference behaviour of the model during a simulation, written in the pseudo-code described in [Model interactions](interactions.md#pseudo-code-conventions). `data.X` is the resolved value of the data item `X`; functions and constants not given by the archetype (turn rate, detection threshold, weather...) belong to the simulation.
 
 - **Reads:** nothing.
-- **Read by:** every sensor of every entity (position and orientation of the carrier and of the targets), the signature of its entity (aspect), the tasks (`MoveTo`, `FollowFlightPlan`).
+- **Read by:** every sensor of every entity (position and orientation of the carrier and of the targets), the signature of its entity (aspect), the movement tasks it carries (`MoveTo`, `FollowCourse`, `HoldPosition`, see [kinematic tasks](../tasks/kinematics.md)).
 
 ```text
 state

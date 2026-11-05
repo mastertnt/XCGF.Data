@@ -12,6 +12,11 @@
         <Description>Heading, pitch and roll of the entity when it is created.</Description>
       </Parameter>
     </InitializationData>
+    <Tasks>
+      <TaskRef task="MoveTo"/>
+      <TaskRef task="FollowCourse"/>
+      <TaskRef task="HoldPosition"/>
+    </Tasks>
   </KinematicDefinition>
 
   <KinematicDefinition name="FixedWingKinematic" base="Kinematic">
@@ -99,6 +104,48 @@
         </Constraints>
       </Parameter>
     </InitializationData>
+    <Tasks>
+      <TaskRef task="MoveTo">
+        <Description>Inherited from Kinematic; the speed is bounded by the flight envelope.</Description>
+        <Parameter name="Speed" dataType="SpeedMetersPerSecond">
+          <Constraints>
+            <Min ref="StallSpeed"/>
+            <Max ref="MaxSpeed"/>
+          </Constraints>
+        </Parameter>
+      </TaskRef>
+      <TaskRef task="SetAltitude">
+        <Parameter name="Altitude" dataType="DistanceMeters">
+          <Constraints><Max ref="Ceiling"/></Constraints>
+        </Parameter>
+        <Parameter name="VerticalSpeed" dataType="SpeedMetersPerSecond">
+          <Constraints><Max ref="ClimbRate"/></Constraints>
+        </Parameter>
+      </TaskRef>
+      <TaskRef task="Orbit">
+        <Parameter name="Speed" dataType="SpeedMetersPerSecond">
+          <Constraints>
+            <Min ref="StallSpeed"/>
+            <Max ref="MaxSpeed"/>
+          </Constraints>
+        </Parameter>
+      </TaskRef>
+      <TaskRef task="ReturnToBase">
+        <Parameter name="BingoFuel" dataType="MassKilograms">
+          <Constraints><Max ref="FuelCapacity"/></Constraints>
+        </Parameter>
+      </TaskRef>
+      <TaskRef task="TakeOff">
+        <Parameter name="RunwayLength" dataType="DistanceMeters">
+          <Constraints><Min ref="MinRunwayLength"/></Constraints>
+        </Parameter>
+      </TaskRef>
+      <TaskRef task="Land">
+        <Parameter name="RunwayLength" dataType="DistanceMeters">
+          <Constraints><Min ref="MinRunwayLength"/></Constraints>
+        </Parameter>
+      </TaskRef>
+    </Tasks>
   </KinematicDefinition>
 
 </EquipmentLibrary>

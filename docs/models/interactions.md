@@ -17,7 +17,7 @@ flowchart LR
         EA["ESM"]
         IA["InfraredSensor"]
         VA["VisualSensor"]
-        TA["Tasks<br/>(MoveTo, FollowFlightPlan,<br/>FireOnTarget)"]
+        TA["Tasks<br/>(MoveTo, FollowCourse,<br/>FireOnTarget)"]
     end
     subgraph B["Entity B (target)"]
         KB["Kinematic<br/>(FixedWingKinematic)"]
