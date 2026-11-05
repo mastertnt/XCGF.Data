@@ -1,0 +1,7 @@
+<Project>
+  <PropertyGroup>
+    <!-- Root of the XCGF data shipped in the package: schemas/ and library/. -->
+    <XcgfDataRoot>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)', '..', 'data'))</XcgfDataRoot>
+    <XcgfDataSchema>$(XcgfDataRoot)schemas/xcgf-data.xsd</XcgfDataSchema>
+  </PropertyGroup>
+</Project>
