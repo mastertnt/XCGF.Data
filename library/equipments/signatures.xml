@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<EquipmentLibrary xmlns="urn:xcgf:data:1.0">
+  <Description>XCGF standard library: signature definitions. A signature tells how detectable its platform is. Aircraft signatures follow CMO: visual and infrared detection ranges and two radar cross sections (bands A-D and E-M), each given for the front, side, rear and top aspects (see docs/cmo-mapping.md).</Description>
+
+  <EquipmentDefinition name="Signature" type="Signature">
+    <Description>Root signature: physical dimensions of the platform. Every signature derives from it.</Description>
+    <TechnologicalData>
+      <Parameter name="Dimensions" dataType="Dimensions">
+        <Description>Length, span and height of the platform.</Description>
+      </Parameter>
+    </TechnologicalData>
+  </EquipmentDefinition>
+
+  <EquipmentDefinition name="AircraftSignature" base="Signature">
+    <Description>Aircraft signature: visual, infrared and radar, per aspect.</Description>
+    <TechnologicalData>
+      <Parameter name="Visual" dataType="AspectDetectionRange">
+        <Description>Range at which the aircraft is seen by eye in daylight, per aspect. Visual sensors scale it by their generation.</Description>
+        <Constraints><Min value="0"/></Constraints>
+      </Parameter>
+      <Parameter name="Infrared" dataType="AspectDetectionRange">
+        <Description>Range at which a reference infrared sensor detects the aircraft, per aspect. Infrared sensors scale it by their generation.</Description>
+        <Constraints><Min value="0"/></Constraints>
+      </Parameter>
+      <Parameter name="RadarCrossSectionAToD" dataType="AspectRadarCrossSection">
+        <Description>Radar cross section seen by radars in bands A to D (below 2 GHz), per aspect.</Description>
+        <Constraints><Min value="0"/></Constraints>
+      </Parameter>
+      <Parameter name="RadarCrossSectionEToM" dataType="AspectRadarCrossSection">
+        <Description>Radar cross section seen by radars in bands E to M (2 GHz and above), per aspect.</Description>
+        <Constraints><Min value="0"/></Constraints>
+      </Parameter>
+    </TechnologicalData>
+  </EquipmentDefinition>
+
+</EquipmentLibrary>

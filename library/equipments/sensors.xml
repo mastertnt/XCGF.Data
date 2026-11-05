@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<EquipmentLibrary xmlns="urn:xcgf:data:1.0">
+  <Description>XCGF standard library: sensor definitions. Sensor derives into Radar, ESM, InfraredSensor and VisualSensor, following the sensor data of CMO (see docs/cmo-mapping.md). Concrete sensors derive from these definitions.</Description>
+
+  <EquipmentDefinition name="Sensor" type="Sensor">
+    <Description>Root sensor: role, generation, coverage (ranges, altitudes, arcs), scan rate and capabilities. Every sensor derives from it.</Description>
+    <TechnologicalData>
+      <Parameter name="Role" dataType="SensorRoleEnum">
+        <Description>Main role of the sensor.</Description>
+        <DefaultValue>Other</DefaultValue>
+      </Parameter>
+      <Parameter name="Generation" dataType="SensorGenerationEnum">
+        <Description>Technology generation, which scales detection performance.</Description>
+      </Parameter>
+      <Parameter name="MinRange" dataType="DistanceMeters">
+        <Description>Shortest distance at which the sensor detects a target.</Description>
+        <DefaultValue>0</DefaultValue>
+        <Constraints>
+          <Min value="0"/>
+          <Max ref="MaxRange"/>
+        </Constraints>
+      </Parameter>
+      <Parameter name="MaxRange" dataType="DistanceMeters">
+        <Description>Farthest distance at which the sensor detects a target. Targets beyond it are never detected.</Description>
+        <Constraints><Min value="0" inclusive="false"/></Constraints>
+      </Parameter>
+      <Parameter name="MinAltitude" dataType="DistanceMeters">
+        <Description>Lowest target altitude the sensor detects.</Description>
+        <Constraints><Max ref="MaxAltitude"/></Constraints>
+      </Parameter>
+      <Parameter name="MaxAltitude" dataType="DistanceMeters">
+        <Description>Highest target altitude the sensor detects.</Description>
+      </Parameter>
+      <Parameter name="ScanInterval" dataType="DurationSeconds">
+        <Description>Time between two detection attempts on the same target.</Description>
+        <Constraints><Min value="0"/></Constraints>
+      </Parameter>
+      <Parameter name="Capabilities" dataType="SensorCapabilities">
+        <Description>Kinds of targets detected and information reported about a contact.</Description>
+      </Parameter>
+      <Parameter name="DetectionArcs" dataType="SensorArcs">
+        <Description>Sectors where the sensor detects. All around the platform when absent.</Description>
+      </Parameter>
+      <Parameter name="MaxContacts" dataType="Count">
+        <Description>Highest number of contacts the sensor follows at once.</Description>
+        <Constraints><Min value="0"/></Constraints>
+      </Parameter>
+    </TechnologicalData>
+    <InitializationData>
+      <Parameter name="Operational" dataType="HLAboolean">
+        <Description>Whether the sensor works when the entity is created (false: damaged or out of service).</Description>
+        <DefaultValue>HLAtrue</DefaultValue>
+      </Parameter>
+    </InitializationData>
+  </EquipmentDefinition>
+
+  <EquipmentDefinition name="Radar" base="Sensor" type="Radar">
+    <Description>Active radar: emission (power, gain, pulse), reception (noise, processing gain) and resolutions. Its detections depend on the radar cross section of the target in its band.</Description>
+    <TechnologicalData>
+      <Parameter name="FrequencyBands" dataType="NatoBands">
+        <Description>Bands the radar emits in. They select the target's radar cross section (A-D or E-M) and the receivers able to intercept it.</Description>
+      </Parameter>
+      <Parameter name="PeakPower" dataType="PowerWatts">
+        <Description>Peak emitted power.</Description>
+        <Constraints><Min value="0" inclusive="false"/></Constraints>
+      </Parameter>
+      <Parameter name="AntennaGain" dataType="Decibels">
+        <Description>Gain of the antenna.</Description>
+      </Parameter>
+      <Parameter name="HorizontalBeamwidth" dataType="AngleDegrees">
+        <Description>Horizontal width of the beam.</Description>
+        <Constraints>
+          <Min value="0" inclusive="false"/>
+          <Max value="360"/>
+        </Constraints>
+      </Parameter>
+      <Parameter name="VerticalBeamwidth" dataType="AngleDegrees">
+        <Description>Vertical width of the beam.</Description>
+        <Constraints>
+          <Min value="0" inclusive="false"/>
+          <Max value="180"/>
+        </Constraints>
+      </Parameter>
+      <Parameter name="PulseWidth" dataType="ShortDurationSeconds">
+        <Description>Duration of one pulse.</Description>
+        <Constraints><Min value="0" inclusive="false"/></Constraints>
+      </Parameter>
+      <Parameter name="PulseRepetitionFrequency" dataType="FrequencyHertz">
+        <Description>Number of pulses per second.</Description>
+        <Constraints><Min value="0" inclusive="false"/></Constraints>
+      </Parameter>
+      <Parameter name="SystemNoiseLevel" dataType="Decibels">
+        <Description>Noise level of the receiver.</Description>
+      </Parameter>
+      <Parameter name="ProcessingGain" dataType="Decibels">
+        <Description>Gain (or loss, when negative) brought by signal processing.</Description>
+      </Parameter>
+      <Parameter name="RangeResolution" dataType="DistanceMeters">
+        <Description>Smallest range difference at which two targets are told apart.</Description>
+        <Constraints><Min value="0"/></Constraints>
+      </Parameter>
+      <Parameter name="AngularResolution" dataType="AngleDegrees">
+        <Description>Smallest bearing difference at which two targets are told apart.</Description>
+        <Constraints><Min value="0"/></Constraints>
+      </Parameter>
+      <Parameter name="Features" dataType="RadarFeatures">
+        <Description>Processing features (pulse-Doppler, look-down/shoot-down, track-while-scan...).</Description>
+      </Parameter>
+      <Parameter name="TrackingArcs" dataType="SensorArcs">
+        <Description>Sectors where the radar can track or illuminate a target. The detection arcs when absent.</Description>
+      </Parameter>
+      <Parameter name="MaxIlluminatedTargets" dataType="Count">
+        <Description>Highest number of targets illuminated at once for weapon guidance; 0 for a radar without fire control.</Description>
+        <DefaultValue>0</DefaultValue>
+        <Constraints><Min value="0"/></Constraints>
+      </Parameter>
+    </TechnologicalData>
+    <InitializationData>
+      <Parameter name="Mode" dataType="RadarModeEnum">
+        <Description>Operating mode of the radar when the entity is created. Off keeps the platform silent (emission control).</Description>
+        <DefaultValue>Off</DefaultValue>
+      </Parameter>
+    </InitializationData>
+  </EquipmentDefinition>
+
+  <EquipmentDefinition name="ESM" base="Sensor" type="ESM">
+    <Description>Passive electronic support measures, radar warning receivers included: detects and identifies emitters, without emitting.</Description>
+    <TechnologicalData>
+      <Parameter name="FrequencyBands" dataType="NatoBands">
+        <Description>Bands the receiver listens to. Emitters outside them are not intercepted.</Description>
+      </Parameter>
+      <Parameter name="Sensitivity" dataType="PowerDecibelMilliwatts">
+        <Description>Weakest received power the receiver detects.</Description>
+      </Parameter>
+      <Parameter name="BearingAccuracy" dataType="AngleDegrees">
+        <Description>Accuracy of the bearing measured on an emitter.</Description>
+        <Constraints><Min value="0"/></Constraints>
+      </Parameter>
+      <Parameter name="EmitterIdentification" dataType="HLAboolean">
+        <Description>Whether the receiver identifies the type of an intercepted emitter.</Description>
+        <DefaultValue>HLAtrue</DefaultValue>
+      </Parameter>
+    </TechnologicalData>
+  </EquipmentDefinition>
+
+  <EquipmentDefinition name="InfraredSensor" base="Sensor" type="Infrared">
+    <Description>Passive infrared sensor (IRST, FLIR, missile approach warner). Its detections depend on the infrared signature of the target.</Description>
+    <TechnologicalData>
+      <Parameter name="Band" dataType="InfraredBandEnum">
+        <Description>Infrared band of the detector.</Description>
+        <DefaultValue>MidWave</DefaultValue>
+      </Parameter>
+      <Parameter name="Imaging" dataType="HLAboolean">
+        <Description>Whether the sensor forms an image, which allows classifying contacts.</Description>
+        <DefaultValue>HLAfalse</DefaultValue>
+      </Parameter>
+      <Parameter name="FieldOfView" dataType="AngleDegrees">
+        <Description>Instantaneous field of view of the detector.</Description>
+        <Constraints>
+          <Min value="0" inclusive="false"/>
+          <Max value="360"/>
+        </Constraints>
+      </Parameter>
+    </TechnologicalData>
+  </EquipmentDefinition>
+
+  <EquipmentDefinition name="VisualSensor" base="Sensor" type="Visual">
+    <Description>Visual or electro-optical sensor (eye, TV camera). Its detections depend on the visual signature of the target.</Description>
+    <TechnologicalData>
+      <Parameter name="NightCapable" dataType="HLAboolean">
+        <Description>Whether the sensor works at night (low-light camera, night vision).</Description>
+        <DefaultValue>HLAfalse</DefaultValue>
+      </Parameter>
+      <Parameter name="FieldOfView" dataType="AngleDegrees">
+        <Description>Instantaneous field of view of the sensor.</Description>
+        <Constraints>
+          <Min value="0" inclusive="false"/>
+          <Max value="360"/>
+        </Constraints>
+      </Parameter>
+    </TechnologicalData>
+  </EquipmentDefinition>
+
+</EquipmentLibrary>
