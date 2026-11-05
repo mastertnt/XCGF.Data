@@ -74,4 +74,4 @@ Build the package locally:
 dotnet pack src/XCGF.Data -c Release -o artifacts -p:Version=0.1.0
 ```
 
-The `NuGet` workflow validates the standard library and packs on every push and pull request. Pushing a `vX.Y.Z` tag publishes version `X.Y.Z` to GitHub Packages, and to nuget.org when the `NUGET_API_KEY` repository secret is set.
+The `NuGet` workflow validates the standard library and packs on every push and pull request. Pushing an `X.Y.Z` tag (no `v` prefix, e.g. `0.1.0`) publishes version `X.Y.Z` to GitHub Packages, and to nuget.org when the `NUGET_API_KEY` repository secret is set.
