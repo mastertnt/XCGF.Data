@@ -73,6 +73,21 @@ Performance profile: CMO gives, for each altitude band, the speed (kts) and fuel
 Not mapped yet: crew, OODA values, endurance (derived from fuel and performance), physical size
 code (see `Dimensions`), weapon mounts and loadouts (future weapon equipments).
 
+## Movement tasks
+
+The standard tasks of `library/tasks/kinematics.xml` follow the CMO movement orders; a scenario
+importer maps the CMO orders of a unit to them. See [kinematic tasks](tasks/kinematics.md).
+
+| XCGF task | CMO order | Notes |
+|---|---|---|
+| `MoveTo` | course with one waypoint | throttle and altitude of the waypoint |
+| `FollowCourse` | plotted course | one `FlightPlanWaypoint` per CMO waypoint; kts → m/s, ft → m |
+| `HoldPosition` | all stop (ships, ground), orbit in place (aircraft) | |
+| `SetAltitude` | altitude setting, terrain following | CMO altitude presets converted to metres |
+| `Orbit` | station keeping, patrol or support racetrack | |
+| `ReturnToBase` | RTB, bingo fuel (Bingo/Joker) | `BingoFuel` in kg |
+| `TakeOff`, `Land` | launch, landing | `RunwayLength` checked against `MinRunwayLength` |
+
 ## Signature
 
 Source: the signature table of the CMO aircraft record. CMO gives each signature for four
