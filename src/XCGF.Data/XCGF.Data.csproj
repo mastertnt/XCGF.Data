@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Content-only package: ships the XCGF schema and the XCGF standard library.
+    No assembly is built into the package; the examples are not shipped.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <IncludeSymbols>false</IncludeSymbols>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <DevelopmentDependency>false</DevelopmentDependency>
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+
+    <RepoRoot>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)', '..', '..'))</RepoRoot>
+
+    <PackageId>XCGF.Data</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>mastertnt</Authors>
+    <Description>XML schema (XSD) describing XCGF archetypes (data types, equipments, entities, units, tasks) and the XCGF standard library (HLA-based data types, kinematic, signature and sensor equipments).</Description>
+    <PackageTags>xcgf;xsd;schema;archetype;hla;simulation</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/mastertnt/XCGF.Data</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/mastertnt/XCGF.Data</PackageProjectUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <XcgfDataFile Include="$(RepoRoot)schemas/**/*.xsd" Subfolder="schemas" />
+    <XcgfDataFile Include="$(RepoRoot)library/**/*.xml" Subfolder="library" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Raw files, to locate them from MSBuild through $(XcgfDataRoot). -->
+    <None Include="@(XcgfDataFile)" Pack="true" PackagePath="data/%(Subfolder)/" />
+    <!-- Copied to the consumer output under XCGF.Data/ (PackageReference only). -->
+    <None Include="@(XcgfDataFile)" Pack="true" PackagePath="contentFiles/any/any/XCGF.Data/%(Subfolder)/" PackageCopyToOutput="true" BuildAction="None" />
+    <None Include="buildTransitive/XCGF.Data.props" Pack="true" PackagePath="buildTransitive/" />
+    <None Include="$(RepoRoot)README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
+</Project>

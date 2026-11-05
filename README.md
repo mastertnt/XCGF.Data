@@ -14,6 +14,8 @@ The schema describes **archetypes only** (entity, equipment, unit and task types
 | `library/equipments/kinematics.xml` | Standard library: `Kinematic` and `FixedWingKinematic`. |
 | `library/equipments/signatures.xml` | Standard library: `Signature` and `AircraftSignature`. |
 | `library/equipments/sensors.xml` | Standard library: `Sensor` and its `Radar`, `ESM`, `InfraredSensor` and `VisualSensor` derivations. |
+| `src/XCGF.Data/XCGF.Data.csproj` | NuGet packaging project (content only, no code). |
+| `docs/models/` | One page per standard model (`Kinematic`, `FixedWingKinematic`, `Signature`, `AircraftSignature`, `Sensor`, `Radar`, `ESM`, `InfraredSensor`, `VisualSensor`): role, data, constraints, inheritance, behaviour. Start from `docs/models/README.md`. |
 | `docs/cmo-mapping.md` | Mapping of the standard equipments to the Command: Modern Operations (CMO) database, for a future importer. |
 | `examples/library/library.xml` | Example library, assembled from the standard library and the files below with XInclude. |
 | `examples/library/equipments.xml` | Example equipments deriving from the standard library: fighter kinematic, signature, radar, RWR, IRST, and an air-to-air missile. |
@@ -54,3 +56,22 @@ xmllint -noout -schema schemas/xcgf-data.xsd examples/library/tasks.xml
 ```
 
 Some rules cannot be expressed in XSD 1.0 and are left to the tools: a kinematic definition must derive from `Kinematic`, definitions and units must not form cycles, a `Min` or `Max` holds either `value` or `ref`, and required task parameters must be supplied in the scenario.
+
+## NuGet package
+
+The `XCGF.Data` package ships the schema and the standard library (`schemas/` and `library/`); the example library is not shipped. It contains no assembly.
+
+```sh
+dotnet add package XCGF.Data
+```
+
+- With `PackageReference`, the files are copied to the build output under `XCGF.Data/schemas/` and `XCGF.Data/library/`.
+- MSBuild exposes `$(XcgfDataRoot)` (folder holding `schemas/` and `library/` in the package) and `$(XcgfDataSchema)` (path of `xcgf-data.xsd`).
+
+Build the package locally:
+
+```sh
+dotnet pack src/XCGF.Data -c Release -o artifacts -p:Version=0.1.0
+```
+
+The `NuGet` workflow validates the standard library and packs on every push and pull request. Pushing a `vX.Y.Z` tag publishes version `X.Y.Z` to GitHub Packages, and to nuget.org when the `NUGET_API_KEY` repository secret is set.
