@@ -20,7 +20,7 @@
     <PackageId>XCGF.Data</PackageId>
     <Version>0.1.0</Version>
     <Authors>mastertnt</Authors>
-    <Description>XML schema (XSD) describing XCGF archetypes (data types, equipments, entities, units, tasks) and the XCGF standard library (HLA-based data types, kinematic, signature and sensor equipments).</Description>
+    <Description>XML schema (XSD) describing XCGF archetypes (data types, equipments, entities, units, tasks) and the XCGF standard library (HLA-based data types, kinematic, signature and sensor equipments, movement tasks).</Description>
     <PackageTags>xcgf;xsd;schema;archetype;hla;simulation</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/mastertnt/XCGF.Data</RepositoryUrl>

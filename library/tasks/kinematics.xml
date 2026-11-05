@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TaskLibrary xmlns="urn:xcgf:data:1.0">
+  <Description>XCGF standard library: movement tasks of the kinematic equipments, modelled on the CMO movement orders (plot course, throttle and altitude settings, station keeping, return to base, take-off and landing). Kinematic and FixedWingKinematic reference them through TaskRef; derived kinematics inherit them. See docs/tasks/kinematics.md.</Description>
+
+  <!-- Tasks of every kinematic (Kinematic) -->
+
+  <TaskDefinition name="MoveTo">
+    <Description>Move to a geographic position, then end. CMO: a course with a single waypoint.</Description>
+    <WhoTaskee>
+      <Parameter name="Executor" dataType="EntityReference">
+        <Description>Entity that moves. Defaults to the carrier of the task.</Description>
+      </Parameter>
+    </WhoTaskee>
+    <What>
+      <Parameter name="Throttle" dataType="ThrottleEnum">
+        <Description>Throttle setting held during the move, as in CMO. Ignored when Speed is set.</Description>
+        <DefaultValue>Cruise</DefaultValue>
+      </Parameter>
+      <Parameter name="Speed" dataType="SpeedMetersPerSecond">
+        <Description>Speed held during the move. When set, it takes precedence over Throttle. A kinematic bounds it by its own limits.</Description>
+        <Constraints><Min value="0" inclusive="false"/></Constraints>
+      </Parameter>
+    </What>
+    <When>
+      <Parameter name="TravelTime" dataType="DurationSeconds" direction="Out">
+        <Description>Time actually spent reaching the destination, set by the task when it ends.</Description>
+      </Parameter>
+    </When>
+    <Where>
+      <Parameter name="Destination" dataType="GeoPosition" required="true">
+        <Description>Point to reach. Its altitude is the altitude to hold on the way (ignored by surface kinematics).</Description>
+      </Parameter>
+    </Where>
+    <ActivationTrigger>
+      <Immediate/>
+    </ActivationTrigger>
+    <ExitTriggers>
+      <ExitTrigger outcome="Success">
+        <OnPositionReached parameter="Destination" tolerance="500"/>
+      </ExitTrigger>
+      <ExitTrigger outcome="Aborted">
+        <OnEvent event="OrderCancelled"/>
+      </ExitTrigger>
+    </ExitTriggers>
+  </TaskDefinition>
+
+  <TaskDefinition name="FollowCourse">
+    <Description>Fly or drive through a list of waypoints, in order. CMO: plotted course.</Description>
+    <WhoTaskee>
+      <Parameter name="Executor" dataType="EntityReference">
+        <Description>Entity that follows the course. Defaults to the carrier of the task.</Description>
+      </Parameter>
+    </WhoTaskee>
+    <What>
+      <Parameter name="Throttle" dataType="ThrottleEnum">
+        <Description>Throttle setting on the legs whose waypoint gives no speed.</Description>
+        <DefaultValue>Cruise</DefaultValue>
+      </Parameter>
+      <Parameter name="Loop" dataType="HLAboolean">
+        <Description>Whether the course restarts from its first waypoint once the last one is reached. The task then only ends when cancelled.</Description>
+        <DefaultValue>HLAfalse</DefaultValue>
+      </Parameter>
+    </What>
+    <Where>
+      <Parameter name="Waypoints" dataType="FlightPlan" required="true">
+        <Description>Waypoints to go through, in order, each with its position (altitude included) and the speed to hold on the leg ending at it.</Description>
+      </Parameter>
+      <Parameter name="CurrentWaypoint" dataType="Count" direction="InOut">
+        <Description>Index of the waypoint headed for. Set to choose the starting waypoint; the task updates it as each waypoint is reached.</Description>
+        <DefaultValue>0</DefaultValue>
+        <Constraints><Min value="0"/></Constraints>
+      </Parameter>
+    </Where>
+    <ActivationTrigger>
+      <Immediate/>
+    </ActivationTrigger>
+    <ExitTriggers>
+      <ExitTrigger outcome="Success">
+        <CustomTrigger kind="CourseCompleted">
+          <Argument name="parameter" value="Waypoints"/>
+          <Argument name="tolerance" value="500"/>
+        </CustomTrigger>
+      </ExitTrigger>
+      <ExitTrigger outcome="Aborted">
+        <OnEvent event="OrderCancelled"/>
+      </ExitTrigger>
+    </ExitTriggers>
+  </TaskDefinition>
+
+  <TaskDefinition name="HoldPosition">
+    <Description>Stay at the current position. A kinematic that cannot stop (a fixed-wing aircraft) circles around it at loiter throttle. CMO: all stop, or orbit in place.</Description>
+    <WhoTaskee>
+      <Parameter name="Executor" dataType="EntityReference">
+        <Description>Entity that holds. Defaults to the carrier of the task.</Description>
+      </Parameter>
+    </WhoTaskee>
+    <When>
+      <Parameter name="Duration" dataType="DurationSeconds">
+        <Description>How long to hold. When absent, the entity holds until the task is cancelled.</Description>
+        <Constraints><Min value="0" inclusive="false"/></Constraints>
+      </Parameter>
+    </When>
+    <Where>
+      <Parameter name="HoldPoint" dataType="GeoPosition" direction="Out">
+        <Description>Position held, set by the task when it starts (the position of the executor at that time).</Description>
+      </Parameter>
+    </Where>
+    <ActivationTrigger>
+      <Immediate/>
+    </ActivationTrigger>
+    <ExitTriggers>
+      <ExitTrigger outcome="Success">
+        <CustomTrigger kind="DurationElapsed">
+          <Argument name="parameter" value="Duration"/>
+        </CustomTrigger>
+      </ExitTrigger>
+      <ExitTrigger outcome="Aborted">
+        <OnEvent event="OrderCancelled"/>
+      </ExitTrigger>
+    </ExitTriggers>
+  </TaskDefinition>
+
+  <!-- Tasks of fixed-wing aircraft (FixedWingKinematic) -->
+
+  <TaskDefinition name="SetAltitude">
+    <Description>Climb or descend to an altitude and hold it, keeping the current heading. CMO: altitude setting (preset or exact altitude, terrain following).</Description>
+    <WhoTaskee>
+      <Parameter name="Executor" dataType="EntityReference">
+        <Description>Aircraft that changes altitude. Defaults to the carrier of the task.</Description>
+      </Parameter>
+    </WhoTaskee>
+    <What>
+      <Parameter name="Altitude" dataType="DistanceMeters" required="true">
+        <Description>Altitude to reach: above mean sea level, or above ground level when TerrainFollowing is set. The kinematic caps it at its ceiling.</Description>
+        <Constraints><Min value="0"/></Constraints>
+      </Parameter>
+      <Parameter name="TerrainFollowing" dataType="HLAboolean">
+        <Description>Whether Altitude is a height above ground the aircraft keeps by following the terrain.</Description>
+        <DefaultValue>HLAfalse</DefaultValue>
+      </Parameter>
+      <Parameter name="VerticalSpeed" dataType="SpeedMetersPerSecond">
+        <Description>Vertical speed of the climb or descent. When absent, the aircraft climbs at its climb rate.</Description>
+        <Constraints><Min value="0" inclusive="false"/></Constraints>
+      </Parameter>
+    </What>
+    <ActivationTrigger>
+      <Immediate/>
+    </ActivationTrigger>
+    <ExitTriggers>
+      <ExitTrigger outcome="Success">
+        <CustomTrigger kind="AltitudeReached">
+          <Argument name="parameter" value="Altitude"/>
+          <Argument name="tolerance" value="30"/>
+        </CustomTrigger>
+      </ExitTrigger>
+      <ExitTrigger outcome="Aborted">
+        <OnEvent event="OrderCancelled"/>
+      </ExitTrigger>
+    </ExitTriggers>
+  </TaskDefinition>
+
+  <TaskDefinition name="Orbit">
+    <Description>Fly a circle or a racetrack around a station. CMO: station keeping, or the racetrack of a patrol or support mission.</Description>
+    <WhoTaskee>
+      <Parameter name="Executor" dataType="EntityReference">
+        <Description>Aircraft that orbits. Defaults to the carrier of the task.</Description>
+      </Parameter>
+    </WhoTaskee>
+    <What>
+      <Parameter name="Throttle" dataType="ThrottleEnum">
+        <Description>Throttle setting on station. Ignored when Speed is set.</Description>
+        <DefaultValue>Loiter</DefaultValue>
+      </Parameter>
+      <Parameter name="Speed" dataType="SpeedMetersPerSecond">
+        <Description>Speed on station. When set, it takes precedence over Throttle.</Description>
+        <Constraints><Min value="0" inclusive="false"/></Constraints>
+      </Parameter>
+    </What>
+    <When>
+      <Parameter name="Duration" dataType="DurationSeconds">
+        <Description>Time on station, counted from the arrival at the station. When absent, the aircraft orbits until the task is cancelled.</Description>
+        <Constraints><Min value="0" inclusive="false"/></Constraints>
+      </Parameter>
+    </When>
+    <Where>
+      <Parameter name="Center" dataType="GeoPosition" required="true">
+        <Description>Centre of the circle, or of the racetrack; its altitude is the orbit altitude.</Description>
+      </Parameter>
+      <Parameter name="Radius" dataType="DistanceMeters">
+        <Description>Radius of the circle, or of the turns of the racetrack.</Description>
+        <DefaultValue>5000</DefaultValue>
+        <Constraints><Min value="0" inclusive="false"/></Constraints>
+      </Parameter>
+      <Parameter name="LegLength" dataType="DistanceMeters">
+        <Description>Length of the straight legs of the racetrack; 0 flies a circle.</Description>
+        <DefaultValue>0</DefaultValue>
+        <Constraints><Min value="0"/></Constraints>
+      </Parameter>
+      <Parameter name="LegHeading" dataType="AngleDegrees">
+        <Description>Heading of the inbound leg of the racetrack, from true north, in [0, 360).</Description>
+        <DefaultValue>0</DefaultValue>
+        <Constraints>
+          <Min value="0"/>
+          <Max value="360" inclusive="false"/>
+        </Constraints>
+      </Parameter>
+    </Where>
+    <ActivationTrigger>
+      <Immediate/>
+    </ActivationTrigger>
+    <ExitTriggers>
+      <ExitTrigger outcome="Success">
+        <CustomTrigger kind="DurationElapsed">
+          <Argument name="parameter" value="Duration"/>
+          <Argument name="from" value="StationReached"/>
+        </CustomTrigger>
+      </ExitTrigger>
+      <ExitTrigger outcome="Aborted">
+        <OnEvent event="OrderCancelled"/>
+      </ExitTrigger>
+    </ExitTriggers>
+  </TaskDefinition>
+
+  <TaskDefinition name="ReturnToBase">
+    <Description>Fly back to the base and end overhead it; landing is a separate task (Land). CMO: RTB, ordered or triggered when the fuel falls to the bingo level.</Description>
+    <WhoTaskee>
+      <Parameter name="Executor" dataType="EntityReference">
+        <Description>Aircraft that returns. Defaults to the carrier of the task.</Description>
+      </Parameter>
+    </WhoTaskee>
+    <What>
+      <Parameter name="Throttle" dataType="ThrottleEnum">
+        <Description>Throttle setting on the way back; Cruise flies the best range.</Description>
+        <DefaultValue>Cruise</DefaultValue>
+      </Parameter>
+    </What>
+    <Where>
+      <Parameter name="Base" dataType="GeoPosition" required="true">
+        <Description>Position of the base (runway threshold or carrier position); its altitude is the field elevation.</Description>
+      </Parameter>
+    </Where>
+    <Why>
+      <Parameter name="BingoFuel" dataType="MassKilograms">
+        <Description>Fuel level at which the aircraft must head back to reach the base with its reserve (CMO bingo fuel). When set, the tool starts the task on its own as soon as the fuel on board falls to it. Bounded by the fuel capacity.</Description>
+        <Constraints><Min value="0"/></Constraints>
+      </Parameter>
+    </Why>
+    <ActivationTrigger>
+      <Immediate/>
+    </ActivationTrigger>
+    <ExitTriggers>
+      <ExitTrigger outcome="Success">
+        <OnPositionReached parameter="Base" tolerance="2000"/>
+      </ExitTrigger>
+      <ExitTrigger outcome="Failure">
+        <OnCondition expression="Fuel &lt;= 0"/>
+      </ExitTrigger>
+      <ExitTrigger outcome="Aborted">
+        <OnEvent event="OrderCancelled"/>
+      </ExitTrigger>
+    </ExitTriggers>
+  </TaskDefinition>
+
+  <TaskDefinition name="TakeOff">
+    <Description>Take off from a runway and climb to a first altitude. CMO: launch of an aircraft from its airfield.</Description>
+    <WhoTaskee>
+      <Parameter name="Executor" dataType="EntityReference">
+        <Description>Aircraft that takes off. Defaults to the carrier of the task.</Description>
+      </Parameter>
+    </WhoTaskee>
+    <What>
+      <Parameter name="ClimbAltitude" dataType="DistanceMeters">
+        <Description>Altitude above the runway at which the take-off ends.</Description>
+        <DefaultValue>300</DefaultValue>
+        <Constraints><Min value="0" inclusive="false"/></Constraints>
+      </Parameter>
+    </What>
+    <Where>
+      <Parameter name="Runway" dataType="GeoPosition" required="true">
+        <Description>Threshold of the runway the take-off roll starts from; its altitude is the field elevation.</Description>
+      </Parameter>
+      <Parameter name="RunwayHeading" dataType="AngleDegrees" required="true">
+        <Description>Heading of the runway, from true north, in [0, 360).</Description>
+        <Constraints>
+          <Min value="0"/>
+          <Max value="360" inclusive="false"/>
+        </Constraints>
+      </Parameter>
+      <Parameter name="RunwayLength" dataType="DistanceMeters">
+        <Description>Usable length of the runway. The fixed-wing kinematic requires it to be at least its minimum runway length.</Description>
+        <Constraints><Min value="0" inclusive="false"/></Constraints>
+      </Parameter>
+    </Where>
+    <ActivationTrigger>
+      <Immediate/>
+    </ActivationTrigger>
+    <ExitTriggers>
+      <ExitTrigger outcome="Success">
+        <CustomTrigger kind="AltitudeReached">
+          <Argument name="parameter" value="ClimbAltitude"/>
+          <Argument name="reference" value="Runway"/>
+        </CustomTrigger>
+      </ExitTrigger>
+      <ExitTrigger outcome="Aborted">
+        <OnEvent event="OrderCancelled"/>
+      </ExitTrigger>
+    </ExitTriggers>
+  </TaskDefinition>
+
+  <TaskDefinition name="Land">
+    <Description>Approach and land on a runway, then stop on it. CMO: landing at the end of an RTB.</Description>
+    <WhoTaskee>
+      <Parameter name="Executor" dataType="EntityReference">
+        <Description>Aircraft that lands. Defaults to the carrier of the task.</Description>
+      </Parameter>
+    </WhoTaskee>
+    <Where>
+      <Parameter name="Runway" dataType="GeoPosition" required="true">
+        <Description>Threshold of the runway the aircraft touches down at; its altitude is the field elevation.</Description>
+      </Parameter>
+      <Parameter name="RunwayHeading" dataType="AngleDegrees" required="true">
+        <Description>Heading of the landing direction, from true north, in [0, 360).</Description>
+        <Constraints>
+          <Min value="0"/>
+          <Max value="360" inclusive="false"/>
+        </Constraints>
+      </Parameter>
+      <Parameter name="RunwayLength" dataType="DistanceMeters">
+        <Description>Usable length of the runway. The fixed-wing kinematic requires it to be at least its minimum runway length.</Description>
+        <Constraints><Min value="0" inclusive="false"/></Constraints>
+      </Parameter>
+    </Where>
+    <ActivationTrigger>
+      <Immediate/>
+    </ActivationTrigger>
+    <ExitTriggers>
+      <ExitTrigger outcome="Success">
+        <OnEvent event="Landed"/>
+      </ExitTrigger>
+      <ExitTrigger outcome="Aborted">
+        <OnEvent event="OrderCancelled"/>
+      </ExitTrigger>
+    </ExitTriggers>
+  </TaskDefinition>
+
+</TaskLibrary>

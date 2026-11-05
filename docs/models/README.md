@@ -9,6 +9,8 @@ derive a concrete model from it, and its mapping to the CMO database.
 [Model interactions](interactions.md) shows how the models call one another during a simulation:
 who reads whom, the simulation loop, a worked example, and the pseudo-code conventions.
 
+The movement tasks the kinematics carry are described in [kinematic tasks](../tasks/kinematics.md).
+
 ## Derivation tree
 
 ```text
