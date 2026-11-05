@@ -14,6 +14,7 @@ The schema describes **archetypes only** (entity, equipment, unit and task types
 | `library/equipments/kinematics.xml` | Standard library: `Kinematic` and `FixedWingKinematic`. |
 | `library/equipments/signatures.xml` | Standard library: `Signature` and `AircraftSignature`. |
 | `library/equipments/sensors.xml` | Standard library: `Sensor` and its `Radar`, `ESM`, `InfraredSensor` and `VisualSensor` derivations. |
+| `docs/models/` | One page per standard model (`Kinematic`, `FixedWingKinematic`, `Signature`, `AircraftSignature`, `Sensor`, `Radar`, `ESM`, `InfraredSensor`, `VisualSensor`): role, data, constraints, inheritance, behaviour. Start from `docs/models/README.md`. |
 | `docs/cmo-mapping.md` | Mapping of the standard equipments to the Command: Modern Operations (CMO) database, for a future importer. |
 | `examples/library/library.xml` | Example library, assembled from the standard library and the files below with XInclude. |
 | `examples/library/equipments.xml` | Example equipments deriving from the standard library: fighter kinematic, signature, radar, RWR, IRST, and an air-to-air missile. |
